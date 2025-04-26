@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +41,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   onComplete = () => {},
 }) => {
   const [step, setStep] = useState(1);
+  const navigate = useNavigate();
   const [progress, setProgress] = useState(20);
   const [userData, setUserData] = useState<UserData>({
     age: "",
@@ -59,7 +61,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       setProgress(((step + 1) / totalSteps) * 100);
     } else {
       onComplete(userData);
-      navigate("/dashboard");
+      navigate("/dashboard", { state: userData});
     }
   };
 

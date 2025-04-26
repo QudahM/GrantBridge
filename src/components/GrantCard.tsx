@@ -65,9 +65,9 @@ const GrantCard = ({
   };
 
   return (
-    <div className="perspective-1000 w-full h-full bg-background">
+    <div className="relative w-full h-[420px] perspective-[1000px]">
       <motion.div
-        className="relative w-full h-full cursor-pointer"
+        className="relative w-full h-full"
         onClick={handleFlip}
         animate={{ rotateY: isFlipped ? 180 : 0 }}
         transition={{
@@ -76,10 +76,15 @@ const GrantCard = ({
           stiffness: 300,
           damping: 30,
         }}
-        style={{ transformStyle: "preserve-3d" }}
+        style={{
+          transformStyle: "preserve-3d",
+        }}
       >
         {/* Front of card */}
-        <Card className="absolute w-full h-full backface-hidden border-2 hover:border-primary/50 transition-colors">
+        <Card
+          className="absolute w-full h-full border-2 hover:border-primary/50 transition-colors"
+          style={{ backfaceVisibility: "hidden" }}
+        >
           <CardContent className="p-6 flex flex-col h-full">
             <div className="flex justify-between items-start mb-4">
               <Badge variant="outline" className="bg-primary/10 text-primary">
@@ -103,7 +108,7 @@ const GrantCard = ({
             </div>
 
             <div className="mt-auto flex justify-between items-center">
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 {requirements.map((req, index) => (
                   <Badge key={index} variant="secondary" className="text-xs">
                     {req.type === "essay" ? (
@@ -122,8 +127,11 @@ const GrantCard = ({
 
         {/* Back of card */}
         <Card
-          className="absolute w-full h-full backface-hidden border-2 border-primary/50"
-          style={{ transform: "rotateY(180deg)" }}
+          className="absolute w-full h-full border-2 border-primary/50"
+          style={{
+            transform: "rotateY(180deg)",
+            backfaceVisibility: "hidden",
+          }}
         >
           <CardContent className="p-6 flex flex-col h-full">
             <div className="flex justify-between items-start mb-4">
