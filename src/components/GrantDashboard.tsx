@@ -20,6 +20,7 @@ import {
 } from "./ui/select";
 import GrantCard from "./GrantCard";
 import ApplicationAssistant from "./ApplicationAssistant";
+import { dummyGrants } from "@/lib/dummyGrants";
 
 interface Grant {
   id: string;
@@ -55,7 +56,7 @@ const GrantDashboard = ({
     interests: ["Technology", "Education", "Research"],
     identifiers: ["Black", "First Generation"],
   },
-  grants = [],
+  grants = dummyGrants,
 }: GrantDashboardProps) => {
   const [selectedGrant, setSelectedGrant] = useState<Grant | null>(null);
   const [showAssistant, setShowAssistant] = useState(false);

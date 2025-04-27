@@ -22,6 +22,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ChevronRight, ChevronLeft, Check } from "lucide-react";
+import countries from "world-countries"
 
 interface OnboardingFlowProps {
   onComplete?: (userData: UserData) => void;
@@ -139,11 +140,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     <SelectValue placeholder="Select your country" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="canada">Canada</SelectItem>
-                    <SelectItem value="usa">United States</SelectItem>
-                    <SelectItem value="uk">United Kingdom</SelectItem>
-                    <SelectItem value="australia">Australia</SelectItem>
-                    <SelectItem value="other">Other</SelectItem>
+                  {[...countries]
+                    .sort((a, b) => a.name.common.localeCompare(b.name.common))
+                    .map((country) => (
+                      <SelectItem key={country.cca2} value={country.name.common}>
+                        {country.name.common}
+                      </SelectItem>
+                  ))}
                   </SelectContent>
                 </Select>
               </div>
