@@ -6,40 +6,72 @@ import fetch from 'node-fetch';
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT ?? 5000;
 
-// Middleware
 app.use(cors());
-app.use(express.json()); // Very important for parsing incoming JSON
+app.use(express.json());
 
 app.post('/api/grants', async (req, res): Promise<any> => {
   try {
     const {
       age,
       country,
-      education,
       gender,
-      interests = [],
+      citizenship,
+      education,
+      degreeType,
+      yearOfStudy,
+      fieldOfStudy,
+      gpa,
+      incomeBracket,
+      financialNeed,
+      ethnicity,
       identifiers = [],
     } = req.body;
 
-    // Validate types defensively
+    // Defensive validation
     if (
       typeof age !== 'number' ||
       typeof country !== 'string' ||
-      typeof education !== 'string' ||
       typeof gender !== 'string' ||
-      !Array.isArray(interests) ||
+      typeof citizenship !== 'string' ||
+      typeof education !== 'string' ||
+      typeof degreeType !== 'string' ||
+      typeof yearOfStudy !== 'string' ||
+      typeof fieldOfStudy !== 'string' ||
+      typeof gpa !== 'string' ||
+      typeof incomeBracket !== 'string' ||
+      typeof financialNeed !== 'boolean' ||
+      typeof ethnicity !== 'string' ||
       !Array.isArray(identifiers)
     ) {
       return res.status(400).json({ error: "Invalid user profile data received." });
     }
 
     const dynamicQuery = `
-      List 5 scholarships or grants for a ${age}-year-old ${identifiers.join(", ")} ${gender} studying ${education} in ${country}.
-      For each, include: Title, Description, Amount, Deadline, Eligibility, Source Organization.
-      Interests include: ${interests.join(", ")}.
-      Respond in JSON format: [{"title": "", "description": "", "amount": "", "deadline": "", "eligibility": "", "organization": ""}]
+      List recent scholarships or grants (from the last 3 years) for:
+      - a ${age}-year-old
+      - ${identifiers.join(", ")} ${gender}
+      - studying ${education} (${degreeType}) in ${country}
+      - Year of Study: ${yearOfStudy}
+      - Field of Study: ${fieldOfStudy}
+      - GPA: ${gpa}
+      - Household Income: ${incomeBracket} (${financialNeed ? 'financial need' : 'not financial need'})
+      - Ethnicity: ${ethnicity}
+      - Citizenship: ${citizenship}
+      
+      Provide for each grant:
+      - Title
+      - Full Description
+      - Amount (USD if possible, else "Varies")
+      - Deadline (specific date)
+      - Eligibility (bullet points)
+      - Organization
+      - Requirements
+      - Tags (e.g., STEM, Women, First-Gen)
+
+      Respond ONLY in JSON array format like:
+      [{"title":"","description":"","amount":"","deadline":"","eligibility":"","organization":"","requirements":"","tags":""}]
     `.trim();
 
     const sonarResponse = await fetch('https://api.perplexity.ai/chat/completions', {
@@ -53,7 +85,7 @@ app.post('/api/grants', async (req, res): Promise<any> => {
         messages: [
           {
             role: "system",
-            content: "You are an AI assistant helping users find scholarships and grants. Always respond in correct JSON format, never plain text.",
+            content: "You are a scholarship recommendation engine. Always respond strictly in JSON array format.",
           },
           {
             role: "user",
@@ -74,40 +106,35 @@ app.post('/api/grants', async (req, res): Promise<any> => {
                   deadline: { type: "string" },
                   eligibility: { type: "string" },
                   organization: { type: "string" },
+                  requirements: { type: "string" },
+                  tags: { type: "string" },
                 },
                 required: ["title", "organization", "amount"],
               },
             },
           },
         },
-        max_tokens: 1000,
+        max_tokens: 2000,
         temperature: 0.2,
       }),
     });
 
     if (!sonarResponse.ok) {
-      const text = await sonarResponse.text();
-      console.error('Sonar API error:', text);
+      const errorText = await sonarResponse.text();
+      console.error('Sonar API error:', errorText);
       return res.status(500).json({ error: 'Failed to fetch grants from Sonar' });
     }
 
-    const sonarData = (await sonarResponse.json()) as {
-      choices: Array<{
-        message: {
-          content: string;
-        };
-      }>;
+    const sonarData = await sonarResponse.json() as {
+      choices?: { message?: { content?: string } }[];
     };
-
-    const replyContent = sonarData.choices?.[0]?.message?.content;
-    console.log('Raw Sonar Reply:', replyContent);
+    const replyContent = sonarData.choices?.[0]?.message?.content ?? '';
 
     let grants = [];
     try {
       grants = JSON.parse(replyContent);
     } catch (parseError) {
       console.error('Failed to parse Sonar JSON:', parseError);
-      console.error('Raw reply content that failed parsing:', replyContent);
       return res.status(500).json({ error: "Failed to parse grants data from Sonar." });
     }
 
@@ -115,20 +142,20 @@ app.post('/api/grants', async (req, res): Promise<any> => {
       id: index.toString(),
       title: item.title ?? "Untitled Grant",
       organization: item.organization ?? "Unknown Organization",
-      amount: item.amount ?? 0,
+      amount: item.amount ?? "Varies",
       deadline: item.deadline ?? "2025-12-31",
-      eligibility: [item.eligibility ?? "Eligibility criteria not provided"],
-      requirements: [],
+      eligibility: item.eligibility ? [item.eligibility] : ["Eligibility not specified"],
+      requirements: item.requirements ? [item.requirements] : [],
       description: item.description ?? "",
-      tags: [],
+      tags: item.tags ? item.tags.split(",").map((tag: string) => tag.trim()) : [],
       difficulty: "Medium",
     }));
 
     res.json(mappedGrants);
 
   } catch (error) {
-    console.error("Error fetching from Sonar API:", error);
-    res.status(500).json({ error: "Failed to fetch grants" });
+    console.error("Internal server error:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 });
 

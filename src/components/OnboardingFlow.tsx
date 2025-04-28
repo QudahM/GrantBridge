@@ -2,22 +2,10 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
@@ -31,30 +19,44 @@ interface OnboardingFlowProps {
 interface UserData {
   age: string;
   country: string;
-  schoolStatus: string;
   genderIdentity: string;
+  citizenship: string;
+  schoolStatus: string;
+  degreeType: string;
+  yearOfStudy: string;
+  fieldOfStudy: string;
+  gpa: string;
   incomeBracket: string;
-  fieldsOfInterest: string[];
+  financialNeed: boolean;
+  ethnicity: string;
   identifiers: string[];
 }
 
-const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
-  onComplete = () => {},
-}) => {
+const FormGroup = ({ children }: { children: React.ReactNode }) => (
+  <div className="flex flex-col space-y-2">{children}</div>
+);
+
+const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete = () => {} }) => {
   const [step, setStep] = useState(1);
   const navigate = useNavigate();
-  const [progress, setProgress] = useState(20);
+  const [progress, setProgress] = useState(0);
   const [userData, setUserData] = useState<UserData>({
     age: "",
     country: "",
-    schoolStatus: "",
     genderIdentity: "",
+    citizenship: "",
+    schoolStatus: "",
+    degreeType: "",
+    yearOfStudy: "",
+    fieldOfStudy: "",
+    gpa: "",
     incomeBracket: "",
-    fieldsOfInterest: [],
+    financialNeed: false,
+    ethnicity: "",
     identifiers: [],
   });
 
-  const totalSteps = 5;
+  const totalSteps = 6;
 
   const handleNext = () => {
     if (step < totalSteps) {
@@ -64,19 +66,27 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       const finalUserProfile = {
         age: Number(userData.age),
         country: userData.country,
-        education: userData.schoolStatus,
         gender: userData.genderIdentity,
-        interests: userData.fieldsOfInterest ?? [],
-        identifiers: userData.identifiers ?? [],
+        citizenship: userData.citizenship,
+        education: userData.schoolStatus,
+        degreeType: userData.degreeType,
+        yearOfStudy: userData.yearOfStudy,
+        fieldOfStudy: userData.fieldOfStudy,
+        gpa: userData.gpa,
+        incomeBracket: userData.incomeBracket,
+        financialNeed: userData.financialNeed,
+        ethnicity: userData.ethnicity,
+        identifiers: userData.identifiers,
       };
-
       onComplete(finalUserProfile);
       navigate("/dashboard", { state: finalUserProfile });
     }
   };
 
   const handleBack = () => {
-    if (step > 1) {
+    if (step === 1) {
+      navigate("/");
+    } else {
       setStep(step - 1);
       setProgress(((step - 1) / totalSteps) * 100);
     }
@@ -86,21 +96,13 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     setUserData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const toggleArrayItem = (
-    field: "fieldsOfInterest" | "identifiers",
-    item: string,
-  ) => {
+  const toggleArrayItem = (item: string) => {
     setUserData((prev) => {
-      const currentArray = [...prev[field]];
-      const index = currentArray.indexOf(item);
-
-      if (index === -1) {
-        currentArray.push(item);
-      } else {
-        currentArray.splice(index, 1);
-      }
-
-      return { ...prev, [field]: currentArray };
+      const updated = [...prev.identifiers];
+      const index = updated.indexOf(item);
+      if (index === -1) updated.push(item);
+      else updated.splice(index, 1);
+      return { ...prev, identifiers: updated };
     });
   };
 
@@ -114,291 +116,144 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     switch (step) {
       case 1:
         return (
-          <motion.div
-            key="step1"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="space-y-6"
-          >
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold text-center">
-                Tell us about yourself
-              </CardTitle>
-            </CardHeader>
+          <motion.div key="step1" variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6">
+            <CardHeader><CardTitle className="text-2xl font-bold text-center">Tell us about yourself</CardTitle></CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-3">
-                <Label htmlFor="age">How old are you?</Label>
-                <Input
-                  id="age"
-                  type="number"
-                  placeholder="Enter your age"
-                  value={userData.age}
-                  onChange={(e) => updateUserData("age", e.target.value)}
-                />
-              </div>
-
-              <div className="space-y-3">
-                <Label htmlFor="country">Where are you located?</Label>
-                <Select
-                  value={userData.country}
-                  onValueChange={(value) => updateUserData("country", value)}
-                >
-                  <SelectTrigger id="country">
-                    <SelectValue placeholder="Select your country" />
-                  </SelectTrigger>
+              <FormGroup>
+                <Label>Age</Label>
+                <Input type="number" value={userData.age} onChange={(e) => updateUserData("age", e.target.value)} />
+              </FormGroup>
+              <FormGroup>
+                <Label>Country of Residence</Label>
+                <Select value={userData.country} onValueChange={(value) => updateUserData("country", value)}>
+                  <SelectTrigger><SelectValue placeholder="Select your country" /></SelectTrigger>
                   <SelectContent>
-                    {[...countries]
-                      .sort((a, b) =>
-                        a.name.common.localeCompare(b.name.common)
-                      )
-                      .map((country) => (
-                        <SelectItem
-                          key={country.cca2}
-                          value={country.name.common}
-                        >
-                          {country.name.common}
-                        </SelectItem>
-                      ))}
+                    {[...countries].sort((a, b) => a.name.common.localeCompare(b.name.common)).map((c) => (
+                      <SelectItem key={c.cca2} value={c.name.common}>{c.name.common}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-              </div>
+              </FormGroup>
             </CardContent>
           </motion.div>
         );
 
       case 2:
         return (
-          <motion.div
-            key="step2"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="space-y-6"
-          >
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold text-center">
-                Education & Identity
-              </CardTitle>
-            </CardHeader>
+          <motion.div key="step2" variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6">
+            <CardHeader><CardTitle className="text-2xl font-bold text-center">Identity Details</CardTitle></CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-3">
-                <Label htmlFor="schoolStatus">
-                  What's your current education status?
-                </Label>
-                <Select
-                  value={userData.schoolStatus}
-                  onValueChange={(value) =>
-                    updateUserData("schoolStatus", value)
-                  }
-                >
-                  <SelectTrigger id="schoolStatus">
-                    <SelectValue placeholder="Select your education status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="high-school">
-                      High School Student
-                    </SelectItem>
-                    <SelectItem value="undergraduate">
-                      Undergraduate Student
-                    </SelectItem>
-                    <SelectItem value="graduate">Graduate Student</SelectItem>
-                    <SelectItem value="recent-graduate">
-                      Recent Graduate
-                    </SelectItem>
-                    <SelectItem value="not-in-school">
-                      Not Currently in School
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-3">
-                <Label htmlFor="genderIdentity">
-                  What's your gender identity?
-                </Label>
-                <RadioGroup
-                  value={userData.genderIdentity}
-                  onValueChange={(value) =>
-                    updateUserData("genderIdentity", value)
-                  }
-                  className="grid grid-cols-2 gap-2"
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="woman" id="woman" />
-                    <Label htmlFor="woman">Woman</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="man" id="man" />
-                    <Label htmlFor="man">Man</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="non-binary" id="non-binary" />
-                    <Label htmlFor="non-binary">Non-binary</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem
-                      value="prefer-not-to-say"
-                      id="prefer-not-to-say"
-                    />
-                    <Label htmlFor="prefer-not-to-say">Prefer not to say</Label>
-                  </div>
+              <FormGroup>
+                <Label>Gender</Label>
+                <RadioGroup value={userData.genderIdentity} onValueChange={(value) => updateUserData("genderIdentity", value)} className="grid grid-cols-2 gap-2">
+                  {['woman', 'man', 'non-binary', 'prefer-not-to-say'].map((g) => (
+                    <div key={g} className="flex items-center space-x-2">
+                      <RadioGroupItem value={g} id={g} />
+                      <Label htmlFor={g}>{g.replace('-', ' ')}</Label>
+                    </div>
+                  ))}
                 </RadioGroup>
-              </div>
+              </FormGroup>
+              <FormGroup>
+                <Label>Residency/Citizenship</Label>
+                <Input value={userData.citizenship} onChange={(e) => updateUserData("citizenship", e.target.value)} placeholder="Ex: Canadian citizen, PR" />
+              </FormGroup>
             </CardContent>
           </motion.div>
         );
 
       case 3:
         return (
-          <motion.div
-            key="step3"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="space-y-6"
-          >
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold text-center">
-                Financial Information
-              </CardTitle>
-            </CardHeader>
+          <motion.div key="step3" variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6">
+            <CardHeader><CardTitle className="text-2xl font-bold text-center">Education Details</CardTitle></CardHeader>
             <CardContent className="space-y-6">
-              <div className="space-y-3">
-                <Label htmlFor="incomeBracket">
-                  What's your annual income bracket?
-                </Label>
-                <Select
-                  value={userData.incomeBracket}
-                  onValueChange={(value) =>
-                    updateUserData("incomeBracket", value)
-                  }
-                >
-                  <SelectTrigger id="incomeBracket">
-                    <SelectValue placeholder="Select your income bracket" />
-                  </SelectTrigger>
+              <FormGroup>
+                <Label>Current Education Status</Label>
+                <Select value={userData.schoolStatus} onValueChange={(value) => updateUserData("schoolStatus", value)}>
+                  <SelectTrigger><SelectValue placeholder="Select education status" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="under-25k">Under $25,000</SelectItem>
-                    <SelectItem value="25k-50k">$25,000 - $50,000</SelectItem>
-                    <SelectItem value="50k-75k">$50,000 - $75,000</SelectItem>
-                    <SelectItem value="75k-100k">$75,000 - $100,000</SelectItem>
-                    <SelectItem value="over-100k">Over $100,000</SelectItem>
-                    <SelectItem value="prefer-not-to-say">
-                      Prefer not to say
-                    </SelectItem>
+                    {['high-school', 'undergraduate', 'graduate', 'not-in-school'].map((s) => (
+                      <SelectItem key={s} value={s}>{s.replace('-', ' ')}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
-                <p className="text-sm text-muted-foreground mt-2">
-                  This helps us match you with income-based grants and
-                  scholarships.
-                </p>
-              </div>
+              </FormGroup>
+
+              {(userData.schoolStatus === 'undergraduate' || userData.schoolStatus === 'graduate') && (
+                <>
+                  <FormGroup>
+                    <Label>Degree Type</Label>
+                    <Input value={userData.degreeType} onChange={(e) => updateUserData("degreeType", e.target.value)} placeholder="Ex: Bachelor's, Master's" />
+                  </FormGroup>
+                  <FormGroup>
+                    <Label>Year of Study</Label>
+                    <Input value={userData.yearOfStudy} onChange={(e) => updateUserData("yearOfStudy", e.target.value)} placeholder="Ex: 2nd year, Final year" />
+                  </FormGroup>
+                </>
+              )}
             </CardContent>
           </motion.div>
         );
 
       case 4:
         return (
-          <motion.div
-            key="step4"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="space-y-6"
-          >
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold text-center">
-                Fields of Interest
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <Label>Select all that apply to you:</Label>
-                <div className="grid grid-cols-2 gap-3 mt-3">
-                  {[
-                    "Computer Science",
-                    "Engineering",
-                    "Business",
-                    "Arts",
-                    "Healthcare",
-                    "Education",
-                    "Social Sciences",
-                    "Natural Sciences",
-                    "Humanities",
-                    "Law",
-                    "Environmental Studies",
-                    "Mathematics",
-                  ].map((field) => (
-                    <div key={field} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={field.toLowerCase().replace(" ", "-")}
-                        checked={userData.fieldsOfInterest.includes(field)}
-                        onCheckedChange={() =>
-                          toggleArrayItem("fieldsOfInterest", field)
-                        }
-                      />
-                      <Label htmlFor={field.toLowerCase().replace(" ", "-")}>
-                        {field}
-                      </Label>
-                    </div>
-                  ))}
-                </div>
-              </div>
+          <motion.div key="step4" variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6">
+            <CardHeader><CardTitle className="text-2xl font-bold text-center">Academic Details</CardTitle></CardHeader>
+            <CardContent className="space-y-6">
+              <FormGroup>
+                <Label>Field of Study</Label>
+                <Input value={userData.fieldOfStudy} onChange={(e) => updateUserData("fieldOfStudy", e.target.value)} placeholder="Ex: Computer Science, Engineering" />
+              </FormGroup>
+              <FormGroup>
+                <Label>Current GPA</Label>
+                <Input value={userData.gpa} onChange={(e) => updateUserData("gpa", e.target.value)} placeholder="Ex: 3.8 / 4.0" />
+              </FormGroup>
             </CardContent>
           </motion.div>
         );
 
       case 5:
         return (
-          <motion.div
-            key="step5"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            exit="exit"
-            className="space-y-6"
-          >
-            <CardHeader>
-              <CardTitle className="text-2xl font-bold text-center">
-                Additional Identifiers
-              </CardTitle>
-            </CardHeader>
+          <motion.div key="step5" variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6">
+            <CardHeader><CardTitle className="text-2xl font-bold text-center">Financial & Ethnicity</CardTitle></CardHeader>
+            <CardContent className="space-y-6">
+              <FormGroup>
+                <Label>Household Income</Label>
+                <Select value={userData.incomeBracket} onValueChange={(value) => {updateUserData("incomeBracket", value);updateUserData("financialNeed", value === "under-25k");}}>
+                  <SelectTrigger><SelectValue placeholder="Select income" /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="under-25k">Under $25,000</SelectItem>
+                    <SelectItem value="25k-50k">$25,000 - $50,000</SelectItem>
+                    <SelectItem value="50k-75k">$50,000 - $75,000</SelectItem>
+                    <SelectItem value="75k-100k">$75,000 - $100,000</SelectItem>
+                    <SelectItem value="over-100k">Over $100,000</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormGroup>
+              <FormGroup>
+                <Label>Ethnicity</Label>
+                <Input value={userData.ethnicity} onChange={(e) => updateUserData("ethnicity", e.target.value)} placeholder="Ex: South Asian, Hispanic, Black" />
+              </FormGroup>
+            </CardContent>
+          </motion.div>
+        );
+
+      case 6:
+        return (
+          <motion.div key="step6" variants={containerVariants} initial="hidden" animate="visible" exit="exit" className="space-y-6">
+            <CardHeader><CardTitle className="text-2xl font-bold text-center">Additional Identifiers</CardTitle></CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                <Label>Select all that apply to you:</Label>
-                <p className="text-sm text-muted-foreground">
-                  This helps match you with grants for underrepresented groups.
-                </p>
+              <FormGroup>
+                <Label>Select all that apply</Label>
                 <div className="grid grid-cols-2 gap-3 mt-3">
-                  {[
-                    "BIPOC",
-                    "LGBTQ+",
-                    "First Generation Student",
-                    "Low Income",
-                    "Newcomer/Immigrant",
-                    "Person with Disability",
-                    "Indigenous",
-                    "Veteran",
-                  ].map((identifier) => (
-                    <div key={identifier} className="flex items-center space-x-2">
-                      <Checkbox
-                        id={identifier.toLowerCase().replace(" ", "-")}
-                        checked={userData.identifiers.includes(identifier)}
-                        onCheckedChange={() =>
-                          toggleArrayItem("identifiers", identifier)
-                        }
-                      />
-                      <Label htmlFor={identifier.toLowerCase().replace(" ", "-")}>
-                        {identifier}
-                      </Label>
+                  {["BIPOC", "LGBTQ+", "First Generation Student", "Low Income", "Newcomer/Immigrant", "Person with Disability", "Indigenous", "Veteran"].map((id) => (
+                    <div key={id} className="flex items-center space-x-2">
+                      <Checkbox id={id} checked={userData.identifiers.includes(id)} onCheckedChange={() => toggleArrayItem(id)} />
+                      <Label htmlFor={id}>{id}</Label>
                     </div>
                   ))}
                 </div>
-              </div>
+              </FormGroup>
             </CardContent>
           </motion.div>
         );
@@ -417,30 +272,14 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           <span>{Math.round(progress)}% Complete</span>
         </div>
       </div>
-
-      <Card className="w-full">
+      <Card>
         {renderStep()}
-
         <CardFooter className="flex justify-between pt-6">
-          <Button
-            variant="outline"
-            onClick={handleBack}
-            disabled={step === 1}
-            className="flex items-center gap-2"
-          >
+          <Button variant="outline" onClick={handleBack} className="flex items-center gap-2">
             <ChevronLeft className="h-4 w-4" /> Back
           </Button>
-
           <Button onClick={handleNext} className="flex items-center gap-2">
-            {step === totalSteps ? (
-              <>
-                Complete <Check className="h-4 w-4" />
-              </>
-            ) : (
-              <>
-                Next <ChevronRight className="h-4 w-4" />
-              </>
-            )}
+            {step === totalSteps ? (<><Check className="h-4 w-4" /> Complete</>) : (<><ChevronRight className="h-4 w-4" /> Next</>)}
           </Button>
         </CardFooter>
       </Card>

@@ -1,48 +1,21 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import {
-  Search,
-  Filter,
-  Clock,
-  BookmarkCheck,
-  ChevronDown,
-} from "lucide-react";
-import { Button } from "./ui/button";
-import { Input } from "./ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
-import { Badge } from "./ui/badge";
+import { Search, Filter, BookmarkCheck, ChevronDown } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "./ui/select";
-import GrantCard from "./GrantCard";
-import ApplicationAssistant from "./ApplicationAssistant";
+} from "@/components/ui/select";
+import GrantCard from "@/components/GrantCard";
+import ApplicationAssistant from "@/components/ApplicationAssistant";
 import { useLocation } from "react-router-dom";
-
-interface Grant {
-  id: string;
-  title: string;
-  organization: string;
-  amount: number;
-  deadline: string;
-  eligibility: string[];
-  requirements: string[];
-  description: string;
-  tags: string[];
-  difficulty: "Easy" | "Medium" | "Hard";
-}
-
-interface UserProfile {
-  age: number;
-  country: string;
-  education: string;
-  gender: string;
-  interests: string[];
-  identifiers: string[];
-}
+import { Grant, UserProfile } from "@/lib/types";
 
 const GrantDashboard = () => {
   const location = useLocation();
@@ -62,9 +35,7 @@ const GrantDashboard = () => {
       try {
         const response = await fetch("http://localhost:5000/api/grants", {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(userProfile),
         });
 
@@ -120,7 +91,7 @@ const GrantDashboard = () => {
     })
     .sort((a, b) => {
       if (sortBy === "deadline") return getDaysUntil(a.deadline) - getDaysUntil(b.deadline);
-      if (sortBy === "amount") return b.amount - a.amount;
+      if (sortBy === "amount") return Number(b.amount) - Number(a.amount);
       if (sortBy === "difficulty") {
         const order = { Easy: 1, Medium: 2, Hard: 3 };
         return order[a.difficulty] - order[b.difficulty];
@@ -128,9 +99,7 @@ const GrantDashboard = () => {
       return 0;
     });
 
-  const userSummary = `Showing ${filteredGrants.length} grants matched for a ${userProfile.age}-year-old ${userProfile.identifiers.join(
-    " "
-  )} ${userProfile.gender} studying ${userProfile.education} in ${userProfile.country}.`;
+    const userSummary = `Showing ${filteredGrants.length} grants matched for a ${userProfile.age}-year-old ${userProfile.identifiers.join(", ")} ${userProfile.gender} with ${userProfile.citizenship} status, studying ${userProfile.education} (${userProfile.degreeType || "Degree"}) in ${userProfile.fieldOfStudy} (${userProfile.yearOfStudy || "Year not specified"}) at a ${userProfile.gpa ? `GPA of ${userProfile.gpa}` : "GPA not specified"} in ${userProfile.country}. Ethnicity: ${userProfile.ethnicity || "Not specified"}.`;
 
   const renderGrantCards = () => (
     <motion.div
@@ -150,7 +119,7 @@ const GrantDashboard = () => {
             id={grant.id}
             title={grant.title}
             organization={grant.organization}
-            amount={`$${grant.amount.toLocaleString()}`}
+            amount={`$${grant.amount}`}
             deadline={grant.deadline}
             daysRemaining={getDaysUntil(grant.deadline)}
             eligibilityHighlights={grant.eligibility}
@@ -224,9 +193,7 @@ const GrantDashboard = () => {
                       <Button
                         variant="outline"
                         className="mt-4"
-                        onClick={() => {
-                          setSearchQuery("");
-                        }}
+                        onClick={() => setSearchQuery("")}
                       >
                         Clear filters
                       </Button>
@@ -272,7 +239,7 @@ const GrantDashboard = () => {
           <ApplicationAssistant
             grantTitle={selectedGrant.title}
             grantDeadline={selectedGrant.deadline}
-            grantAmount={`$${selectedGrant.amount.toLocaleString()}`}
+            grantAmount={`$${selectedGrant.amount}`}
             grantRequirements={selectedGrant.requirements}
             isOpen={showAssistant}
             onClose={() => setShowAssistant(false)}

@@ -85,7 +85,7 @@ const GrantCard = ({
           className="absolute w-full h-full border-2 hover:border-primary/50 transition-colors"
           style={{ backfaceVisibility: "hidden" }}
         >
-          <CardContent className="p-6 flex flex-col h-full">
+          <CardContent className="p-6 flex flex-col h-full overflow-y-auto">
             <div className="flex justify-between items-start mb-4">
               <Badge variant="outline" className="bg-primary/10 text-primary">
                 {matchPercentage}% Match
@@ -133,7 +133,7 @@ const GrantCard = ({
             backfaceVisibility: "hidden",
           }}
         >
-          <CardContent className="p-6 flex flex-col h-full">
+          <CardContent className="p-6 flex flex-col h-full overflow-y-auto">
             <div className="flex justify-between items-start mb-4">
               <h3 className="text-xl font-bold">{title}</h3>
               <Badge
