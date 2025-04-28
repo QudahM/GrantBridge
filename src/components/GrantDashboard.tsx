@@ -99,7 +99,7 @@ const GrantDashboard = () => {
       return 0;
     });
 
-    const userSummary = `Showing ${filteredGrants.length} grants matched for a ${userProfile.age}-year-old ${userProfile.identifiers.join(", ")} ${userProfile.gender} with ${userProfile.citizenship} status, studying ${userProfile.education} (${userProfile.degreeType || "Degree"}) in ${userProfile.fieldOfStudy} (${userProfile.yearOfStudy || "Year not specified"}) at a ${userProfile.gpa ? `GPA of ${userProfile.gpa}` : "GPA not specified"} in ${userProfile.country}. Ethnicity: ${userProfile.ethnicity || "Not specified"}.`;
+    const userSummary = `Showing ${filteredGrants.length} grants matched for a ${userProfile.age}-year-old ${userProfile.identifiers.join(", ")} ${userProfile.gender} with ${userProfile.citizenship} status, studying ${userProfile.education} (${userProfile.degreeType?.trim() || "Degree"}) in ${userProfile.fieldOfStudy} (${userProfile.yearOfStudy || "Year not specified"}) at a ${userProfile.gpa ? `GPA of ${userProfile.gpa}` : "GPA not specified"} in ${userProfile.country}. Ethnicity: ${userProfile.ethnicity || "Not specified"}.`;
 
   const renderGrantCards = () => (
     <motion.div
@@ -119,7 +119,7 @@ const GrantDashboard = () => {
             id={grant.id}
             title={grant.title}
             organization={grant.organization}
-            amount={`$${grant.amount}`}
+            amount={`${grant.amount}`}
             deadline={grant.deadline}
             daysRemaining={getDaysUntil(grant.deadline)}
             eligibilityHighlights={grant.eligibility}
@@ -239,7 +239,7 @@ const GrantDashboard = () => {
           <ApplicationAssistant
             grantTitle={selectedGrant.title}
             grantDeadline={selectedGrant.deadline}
-            grantAmount={`$${selectedGrant.amount}`}
+            grantAmount={`${selectedGrant.amount}`}
             grantRequirements={selectedGrant.requirements}
             isOpen={showAssistant}
             onClose={() => setShowAssistant(false)}
