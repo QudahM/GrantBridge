@@ -22,10 +22,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ChevronRight, ChevronLeft, Check } from "lucide-react";
-import countries from "world-countries"
+import countries from "world-countries";
 
 interface OnboardingFlowProps {
-  onComplete?: (userData: UserData) => void;
+  onComplete?: (userData: any) => void;
 }
 
 interface UserData {
@@ -61,8 +61,17 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       setStep(step + 1);
       setProgress(((step + 1) / totalSteps) * 100);
     } else {
-      onComplete(userData);
-      navigate("/dashboard", { state: userData});
+      const finalUserProfile = {
+        age: Number(userData.age),
+        country: userData.country,
+        education: userData.schoolStatus,
+        gender: userData.genderIdentity,
+        interests: userData.fieldsOfInterest ?? [],
+        identifiers: userData.identifiers ?? [],
+      };
+
+      onComplete(finalUserProfile);
+      navigate("/dashboard", { state: finalUserProfile });
     }
   };
 
@@ -140,13 +149,18 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     <SelectValue placeholder="Select your country" />
                   </SelectTrigger>
                   <SelectContent>
-                  {[...countries]
-                    .sort((a, b) => a.name.common.localeCompare(b.name.common))
-                    .map((country) => (
-                      <SelectItem key={country.cca2} value={country.name.common}>
-                        {country.name.common}
-                      </SelectItem>
-                  ))}
+                    {[...countries]
+                      .sort((a, b) =>
+                        a.name.common.localeCompare(b.name.common)
+                      )
+                      .map((country) => (
+                        <SelectItem
+                          key={country.cca2}
+                          value={country.name.common}
+                        >
+                          {country.name.common}
+                        </SelectItem>
+                      ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -357,8 +371,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
               <div className="space-y-3">
                 <Label>Select all that apply to you:</Label>
                 <p className="text-sm text-muted-foreground">
-                  This information helps us match you with grants specifically
-                  for underrepresented groups.
+                  This helps match you with grants for underrepresented groups.
                 </p>
                 <div className="grid grid-cols-2 gap-3 mt-3">
                   {[
@@ -371,10 +384,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                     "Indigenous",
                     "Veteran",
                   ].map((identifier) => (
-                    <div
-                      key={identifier}
-                      className="flex items-center space-x-2"
-                    >
+                    <div key={identifier} className="flex items-center space-x-2">
                       <Checkbox
                         id={identifier.toLowerCase().replace(" ", "-")}
                         checked={userData.identifiers.includes(identifier)}
@@ -382,9 +392,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
                           toggleArrayItem("identifiers", identifier)
                         }
                       />
-                      <Label
-                        htmlFor={identifier.toLowerCase().replace(" ", "-")}
-                      >
+                      <Label htmlFor={identifier.toLowerCase().replace(" ", "-")}>
                         {identifier}
                       </Label>
                     </div>
@@ -405,9 +413,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       <div className="mb-8">
         <Progress value={progress} className="h-2" />
         <div className="flex justify-between mt-2 text-sm text-muted-foreground">
-          <span>
-            Step {step} of {totalSteps}
-          </span>
+          <span>Step {step} of {totalSteps}</span>
           <span>{Math.round(progress)}% Complete</span>
         </div>
       </div>

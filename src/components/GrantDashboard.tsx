@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   Search,
@@ -20,7 +20,7 @@ import {
 } from "./ui/select";
 import GrantCard from "./GrantCard";
 import ApplicationAssistant from "./ApplicationAssistant";
-import { dummyGrants } from "@/lib/dummyGrants";
+import { useLocation } from "react-router-dom";
 
 interface Grant {
   id: string;
@@ -35,35 +35,56 @@ interface Grant {
   difficulty: "Easy" | "Medium" | "Hard";
 }
 
-interface GrantDashboardProps {
-  userProfile?: {
-    age: number;
-    country: string;
-    education: string;
-    gender: string;
-    interests: string[];
-    identifiers: string[];
-  };
-  grants?: Grant[];
+interface UserProfile {
+  age: number;
+  country: string;
+  education: string;
+  gender: string;
+  interests: string[];
+  identifiers: string[];
 }
 
-const GrantDashboard = ({
-  userProfile = {
-    age: 21,
-    country: "Canada",
-    education: "Computer Science",
-    gender: "Woman",
-    interests: ["Technology", "Education", "Research"],
-    identifiers: ["Black", "First Generation"],
-  },
-  grants = dummyGrants,
-}: GrantDashboardProps) => {
+const GrantDashboard = () => {
+  const location = useLocation();
+  const userProfile = location.state as UserProfile;
+
+  const [grants, setGrants] = useState<Grant[]>([]);
   const [selectedGrant, setSelectedGrant] = useState<Grant | null>(null);
   const [showAssistant, setShowAssistant] = useState(false);
   const [sortBy, setSortBy] = useState("deadline");
   const [savedGrants, setSavedGrants] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchGrants = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/grants", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(userProfile),
+        });
+
+        const data = await response.json();
+
+        if (Array.isArray(data)) {
+          setGrants(data);
+        } else {
+          console.error("Invalid grants data:", data);
+          setGrants([]);
+        }
+      } catch (error) {
+        console.error("Failed to fetch grants:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGrants();
+  }, [userProfile]);
 
   const getDaysUntil = (dateString: string) => {
     const deadline = new Date(dateString);
@@ -174,77 +195,85 @@ const GrantDashboard = ({
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row lg:items-start gap-6">
-          <div className="flex-1">
-            <Tabs defaultValue="all" onValueChange={setActiveTab} value={activeTab} className="w-full">
-              <TabsList className="grid grid-cols-2 w-full sm:w-auto">
-                <TabsTrigger value="all">All Grants</TabsTrigger>
-                <TabsTrigger value="saved">
-                  Saved Grants
-                  {savedGrants.length > 0 && (
-                    <Badge variant="secondary" className="ml-2">
-                      {savedGrants.length}
-                    </Badge>
+        {loading ? (
+          <div className="text-center py-20">
+            <p className="text-muted-foreground text-lg">Loading grants...</p>
+          </div>
+        ) : (
+          <div className="flex flex-col lg:flex-row lg:items-start gap-6">
+            <div className="flex-1">
+              <Tabs defaultValue="all" onValueChange={setActiveTab} value={activeTab} className="w-full">
+                <TabsList className="grid grid-cols-2 w-full sm:w-auto">
+                  <TabsTrigger value="all">All Grants</TabsTrigger>
+                  <TabsTrigger value="saved">
+                    Saved Grants
+                    {savedGrants.length > 0 && (
+                      <Badge variant="secondary" className="ml-2">
+                        {savedGrants.length}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="all">
+                  {filteredGrants.length > 0 ? renderGrantCards() : (
+                    <div className="text-center py-12">
+                      <p className="text-muted-foreground text-lg">
+                        No grants match your current filters.
+                      </p>
+                      <Button
+                        variant="outline"
+                        className="mt-4"
+                        onClick={() => {
+                          setSearchQuery("");
+                        }}
+                      >
+                        Clear filters
+                      </Button>
+                    </div>
                   )}
-                </TabsTrigger>
-              </TabsList>
+                </TabsContent>
 
-              <TabsContent value="all">
-                {filteredGrants.length > 0 ? renderGrantCards() : (
-                  <div className="text-center py-12">
-                    <p className="text-muted-foreground text-lg">
-                      No grants match your current filters.
-                    </p>
-                    <Button
-                      variant="outline"
-                      className="mt-4"
-                      onClick={() => {
-                        setSearchQuery("");
-                      }}
-                    >
-                      Clear filters
-                    </Button>
+                <TabsContent value="saved">
+                  {savedGrants.length > 0 ? renderGrantCards() : (
+                    <div className="text-center py-12">
+                      <BookmarkCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                      <p className="text-muted-foreground text-lg">
+                        You haven't saved any grants yet.
+                      </p>
+                      <p className="text-muted-foreground">
+                        Browse grants and click the bookmark icon to save them for later.
+                      </p>
+                    </div>
+                  )}
+                </TabsContent>
+              </Tabs>
+            </div>
+
+            <div className="flex flex-col gap-2 lg:ml-6 w-full lg:w-auto">
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-full lg:w-[140px]">
+                  <div className="flex items-center">
+                    <ChevronDown className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Sort by" />
                   </div>
-                )}
-              </TabsContent>
-
-              <TabsContent value="saved">
-                {savedGrants.length > 0 ? renderGrantCards() : (
-                  <div className="text-center py-12">
-                    <BookmarkCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground text-lg">
-                      You haven't saved any grants yet.
-                    </p>
-                    <p className="text-muted-foreground">
-                      Browse grants and click the bookmark icon to save them for later.
-                    </p>
-                  </div>
-                )}
-              </TabsContent>
-            </Tabs>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="deadline">Deadline</SelectItem>
+                  <SelectItem value="amount">Amount</SelectItem>
+                  <SelectItem value="difficulty">Difficulty</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </div>
-
-          <div className="flex flex-col gap-2 lg:ml-6 w-full lg:w-auto">
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-full lg:w-[140px]">
-                <div className="flex items-center">
-                  <ChevronDown className="h-4 w-4 mr-2" />
-                  <SelectValue placeholder="Sort by" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="deadline">Deadline</SelectItem>
-                <SelectItem value="amount">Amount</SelectItem>
-                <SelectItem value="difficulty">Difficulty</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
+        )}
 
         {showAssistant && selectedGrant && (
           <ApplicationAssistant
-            grant={selectedGrant}
-            userProfile={userProfile}
+            grantTitle={selectedGrant.title}
+            grantDeadline={selectedGrant.deadline}
+            grantAmount={`$${selectedGrant.amount.toLocaleString()}`}
+            grantRequirements={selectedGrant.requirements}
             isOpen={showAssistant}
             onClose={() => setShowAssistant(false)}
           />
