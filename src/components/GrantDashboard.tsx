@@ -160,7 +160,20 @@ const GrantDashboard = () => {
         return aDays - bDays;
       }
     
-      if (sortBy === "amount") return Number(b.amount) - Number(a.amount);
+      const parseAmount = (amountStr: string): number => {
+        if (!amountStr) return 0;
+        const match = amountStr.replace(/,/g, "").match(/\d+/);
+        if (match) {
+          return parseInt(match[0], 10);
+        }
+        return 0;
+      };
+
+      if (sortBy === "amount") {
+        const amountA = parseAmount(a.amount);
+        const amountB = parseAmount(b.amount);
+        return amountB - amountA; // Higher amount first
+      }
     
       if (sortBy === "match") {
         return calculateMatchPercentage(userProfile, b) - calculateMatchPercentage(userProfile, a);
