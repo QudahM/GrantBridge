@@ -1,21 +1,20 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Filter, BookmarkCheck, ChevronDown } from "lucide-react";
+import { Search, Filter, BookmarkCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import GrantCard from "@/components/GrantCard";
 import ApplicationAssistant from "@/components/ApplicationAssistant";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Grant, UserProfile } from "@/lib/types";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 const calculateMatchPercentage = (userProfile: UserProfile, grant: Grant) => {
   let baseScore = 50;
@@ -212,6 +211,7 @@ const GrantDashboard = () => {
             }))}
             matchPercentage={calculateMatchPercentage(userProfile, grant)}
             onHelpMeApply={() => handleOpenAssistant(grant)}
+            link={grant.link}
           />
         </motion.div>
       ))}
@@ -241,9 +241,27 @@ const GrantDashboard = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
-            <Button variant="outline" size="icon">
-              <Filter className="h-4 w-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Filter className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setSortBy("deadline")}
+                  className={sortBy === "deadline" ? "bg-primary text-primary-foreground" : ""}>
+                  Sort by Deadline
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy("amount")}
+                  className={sortBy === "amount" ? "bg-primary text-primary-foreground" : ""}>
+                  Sort by Amount
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setSortBy("match")}
+                  className={sortBy === "match" ? "bg-primary text-primary-foreground" : ""}>
+                  Sort by Relevance
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
@@ -317,22 +335,6 @@ const GrantDashboard = () => {
                   )}
                 </TabsContent>
               </Tabs>
-            </div>
-
-            <div className="flex flex-col gap-2 lg:ml-6 w-full lg:w-auto">
-              <Select value={sortBy} onValueChange={setSortBy}>
-                <SelectTrigger className="w-full lg:w-[140px]">
-                  <div className="flex items-center">
-                    <ChevronDown className="h-4 w-4 mr-2" />
-                    <SelectValue placeholder="Sort by" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="deadline">Deadline</SelectItem>
-                  <SelectItem value="amount">Amount</SelectItem>
-                  <SelectItem value="match">Relevance</SelectItem>
-                </SelectContent>
-              </Select>
             </div>
           </div>
         )}

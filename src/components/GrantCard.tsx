@@ -26,6 +26,7 @@ interface GrantCardProps {
   }[];
   matchPercentage?: number;
   onHelpMeApply?: (grantId: string) => void;
+  link?: string;
 }
 
 const GrantCard = ({
@@ -46,6 +47,7 @@ const GrantCard = ({
   ],
   matchPercentage = 92,
   onHelpMeApply = () => {},
+  link = "#",
 }: GrantCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
 
@@ -99,7 +101,14 @@ const GrantCard = ({
               </Badge>
             </div>
 
-            <h3 className="text-xl font-bold mb-2">{title}</h3>
+            <a
+              href={link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-xl font-bold mb-2 hover:underline hover:text-primary transition-colors"
+            >
+              {title}
+            </a>
             <p className="text-muted-foreground mb-4">{organization}</p>
 
             <div className="flex items-center text-lg font-semibold mb-6 text-primary">
@@ -135,7 +144,14 @@ const GrantCard = ({
         >
           <CardContent className="p-6 flex flex-col h-full overflow-y-auto">
             <div className="flex justify-between items-start mb-4">
-              <h3 className="text-xl font-bold">{title}</h3>
+              <a
+                href={link}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xl font-bold hover:underline hover:text-primary transition-colors"
+              >
+                {title}
+              </a>
               <Badge
                 variant="outline"
                 className={`flex items-center gap-1 ${getDeadlineColor()}`}

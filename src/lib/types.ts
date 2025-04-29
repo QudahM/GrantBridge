@@ -25,4 +25,5 @@ export interface Grant {
   description: string;
   tags: string[];
   difficulty: "Easy" | "Medium" | "Hard";
+  link: string;
 }

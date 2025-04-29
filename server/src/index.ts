@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
+import { link } from 'fs';
 
 dotenv.config();
 
@@ -69,6 +70,7 @@ app.post('/api/grants', async (req, res): Promise<any> => {
       * Organization
       * Requirements
       * Tags (e.g., STEM, Women, First-Gen)
+      * Link (to official grant website or application page)
 
       Respond ONLY in JSON array format like:
       [{"title":"","description":"","amount":"","deadline":"","eligibility":"","organization":"","requirements":"","tags":""}]
@@ -108,6 +110,7 @@ app.post('/api/grants', async (req, res): Promise<any> => {
                   organization: { type: "string" },
                   requirements: { type: "string" },
                   tags: { type: "string" },
+                  link: { type: "string" },
                 },
                 required: ["title", "organization", "amount"],
               },
@@ -144,6 +147,7 @@ app.post('/api/grants', async (req, res): Promise<any> => {
       organization: item.organization ?? "Unknown Organization",
       amount: item.amount ?? "Varies",
       deadline: item.deadline ?? "2026-12-31",
+      link: item.link ?? `https://www.google.com/search?q=${encodeURIComponent(item.title)}`,
       eligibility: item.eligibility
         ? item.eligibility.split(/[•\n]/).map((e: string) => e.trim()).filter((e: string) => e.length > 0)
         : ["Eligibility not specified"],
