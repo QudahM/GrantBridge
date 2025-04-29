@@ -95,7 +95,7 @@ const GrantDashboard = () => {
     };
 
     fetchGrants();
-  }, [userProfile]);
+  }, []);
 
   const getDaysUntil = (dateString: string) => {
     const deadline = new Date(dateString);
@@ -134,15 +134,41 @@ const GrantDashboard = () => {
       return true;
     })
     .sort((a, b) => {
-      if (sortBy === "deadline") return getDaysUntil(a.deadline) - getDaysUntil(b.deadline);
-      if (sortBy === "amount") return Number(b.amount) - Number(a.amount);
-      if (sortBy === "difficulty") {
-        const order = { Easy: 1, Medium: 2, Hard: 3 };
-        return order[a.difficulty] - order[b.difficulty];
+      if (sortBy === "deadline") {
+        const aDays = getDaysUntil(a.deadline);
+        const bDays = getDaysUntil(b.deadline);
+    
+        // 1. If both are NaN, treat them equal
+        if (isNaN(aDays) && isNaN(bDays)) return 0;
+    
+        // 2. If one is NaN, prioritize NaN over expired grants but after upcoming ones
+        if (isNaN(aDays)) {
+          return bDays < 0 ? -1 : 1; // If b is expired, a(NaN) comes first; if b is upcoming, b comes first
+        }
+        if (isNaN(bDays)) {
+          return aDays < 0 ? 1 : -1; // If a is expired, b(NaN) comes first; if a is upcoming, a comes first
+        }
+    
+        // 3. Now both are numbers (not NaN)
+        // If one is expired (<0) and one is upcoming (>0)
+        if (aDays < 0 && bDays >= 0) return 1;
+        if (bDays < 0 && aDays >= 0) return -1;
+
+        if (aDays < 0 && bDays < 0) return bDays - aDays; // Both are expired, sort by days remaining (ascending)
+    
+        // 4. Otherwise normal ascending sort
+        return aDays - bDays;
       }
+    
+      if (sortBy === "amount") return Number(b.amount) - Number(a.amount);
+    
+      if (sortBy === "match") {
+        return calculateMatchPercentage(userProfile, b) - calculateMatchPercentage(userProfile, a);
+      }
+    
       return 0;
     });
-
+    
   const userSummary = `Showing ${filteredGrants.length} grants matched for a ${userProfile.age}-year-old ${userProfile.identifiers.join(", ")} ${userProfile.gender} with ${userProfile.citizenship} status, studying ${userProfile.education} (${userProfile.degreeType?.trim() || "Degree"}) in ${userProfile.fieldOfStudy} (${userProfile.yearOfStudy || "Year not specified"}) at a ${userProfile.gpa ? `GPA of ${userProfile.gpa}` : "GPA not specified"} in ${userProfile.country}. Ethnicity: ${userProfile.ethnicity || "Not specified"}.`;
 
   const renderGrantCards = () => (
@@ -291,7 +317,7 @@ const GrantDashboard = () => {
                 <SelectContent>
                   <SelectItem value="deadline">Deadline</SelectItem>
                   <SelectItem value="amount">Amount</SelectItem>
-                  <SelectItem value="difficulty">Difficulty</SelectItem>
+                  <SelectItem value="match">Relevance</SelectItem>
                 </SelectContent>
               </Select>
             </div>
