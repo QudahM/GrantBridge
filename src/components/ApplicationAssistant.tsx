@@ -30,10 +30,13 @@ import {
   CopyIcon,
   RefreshCwIcon,
 } from "lucide-react";
+import { on } from "events";
 
 interface ApplicationAssistantProps {
   isOpen?: boolean;
   onClose?: () => void;
+  onSaveGrant?: () => void;
+  isSaved?: boolean;
   grantTitle?: string;
   grantDeadline?: string;
   grantAmount?: string;
@@ -43,6 +46,8 @@ interface ApplicationAssistantProps {
 const ApplicationAssistant = ({
   isOpen = true,
   onClose = () => {},
+  onSaveGrant = () => {},
+  isSaved = false,
   grantTitle = "STEM Diversity Scholarship",
   grantDeadline = "May 15, 2023",
   grantAmount = "$5,000",
@@ -347,8 +352,12 @@ const ApplicationAssistant = ({
           <Button variant="default" className="flex-1">
             Start application
           </Button>
-          <Button variant="outline" className="flex-1">
-            Save for later
+          <Button
+            variant={isSaved ? "destructive" : "outline"}
+            className="flex-1"
+            onClick={onSaveGrant}
+          >
+            {isSaved ? "Remove from saved" : "Save for later"}
           </Button>
         </div>
       </div>

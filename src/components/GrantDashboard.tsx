@@ -347,6 +347,8 @@ const GrantDashboard = () => {
             grantRequirements={selectedGrant.requirements}
             isOpen={showAssistant}
             onClose={() => setShowAssistant(false)}
+            onSaveGrant={() => toggleSaveGrant(selectedGrant.id)}
+            isSaved={savedGrants.includes(selectedGrant.id)}
           />
         )}
       </motion.div>
