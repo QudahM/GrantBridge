@@ -110,7 +110,7 @@ const GrantCard = ({
             <div className="mt-auto flex justify-between items-center">
               <div className="flex gap-2 flex-wrap">
                 {requirements.map((req, index) => (
-                  <Badge key={index} variant="secondary" className="text-xs">
+                  <Badge key={req.type} variant="secondary" className="text-xs">
                     {req.type === "essay" ? (
                       <FileText className="h-3 w-3 mr-1" />
                     ) : null}
@@ -150,24 +150,38 @@ const GrantCard = ({
                 Why you're eligible:
               </h4>
               <ul className="space-y-1">
-                {eligibilityHighlights.map((highlight, index) => (
-                  <li key={index} className="text-sm flex items-start">
-                    <span className="text-green-500 mr-2">✓</span>
-                    {highlight}
-                  </li>
-                ))}
+              {eligibilityHighlights.flatMap((highlight, i) =>
+                highlight
+                  .split(" - ")
+                  .map((point, j) => (
+                    point.trim() && (
+                      <li key={`${i}-${j}`} className="text-sm flex items-start">
+                        <span className="text-green-500 mr-2">✓</span>
+                        {point.replace(/^[-–•]\s*/, '').trim()}
+                      </li>
+                    )
+                  ))
+              )}
               </ul>
             </div>
 
             <div className="mb-4">
               <h4 className="text-sm font-semibold mb-2">Requirements:</h4>
               <ul className="space-y-1">
-                {requirements.map((req, index) => (
-                  <li key={index} className="text-sm flex items-center">
-                    <span className="text-primary mr-2">•</span>
-                    {req.label}
-                  </li>
-                ))}
+                {requirements.flatMap((req, i) =>
+                  req.label.split(/,| and /i).map((item, j) => {
+                    const trimmed = item.trim();
+                    const capitalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+                    return (
+                      trimmed && (
+                        <li key={`${i}-${j}`} className="text-sm flex items-start">
+                          <span className="text-primary mr-2">•</span>
+                          {capitalized.replace(/^[-–•]\s*/, '')}
+                        </li>
+                      )
+                    );
+                  })
+                )}
               </ul>
             </div>
 

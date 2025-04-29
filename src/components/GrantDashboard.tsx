@@ -14,8 +14,47 @@ import {
 } from "@/components/ui/select";
 import GrantCard from "@/components/GrantCard";
 import ApplicationAssistant from "@/components/ApplicationAssistant";
-import { useLocation } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Grant, UserProfile } from "@/lib/types";
+
+const calculateMatchPercentage = (userProfile: UserProfile, grant: Grant) => {
+  let baseScore = 50;
+
+  const userAnswers = [
+    userProfile.age?.toString() || "",
+    ...(userProfile.identifiers || []),
+    userProfile.gender || "",
+    userProfile.citizenship || "",
+    userProfile.education || "",
+    userProfile.degreeType || "",
+    userProfile.fieldOfStudy || "",
+    userProfile.yearOfStudy?.toString() || "",
+    userProfile.gpa?.toString() || "",
+    userProfile.country || "",
+    userProfile.ethnicity || "",
+  ].map((answer) => answer.toLowerCase());
+
+  const grantCriteria = [
+    ...(grant.eligibility || []),
+    ...(grant.requirements || []),
+  ].map((c) => c.toLowerCase());
+
+  if (grantCriteria.length === 0) {
+    return baseScore;
+  }
+
+  let matched = 0;
+  grantCriteria.forEach((criteria) => {
+    if (userAnswers.some((answer) => criteria.includes(answer))) {
+      matched++;
+    }
+  });
+
+  const matchRatio = matched / grantCriteria.length;
+  const finalScore = Math.min(100, Math.round(baseScore + matchRatio * 50));
+
+  return finalScore;
+};
 
 const GrantDashboard = () => {
   const location = useLocation();
@@ -29,6 +68,7 @@ const GrantDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchGrants = async () => {
@@ -75,6 +115,10 @@ const GrantDashboard = () => {
     setShowAssistant(true);
   };
 
+  const handleNewGrants = () => {
+    navigate("/");
+  };
+
   const filteredGrants = grants
     .filter((grant) => {
       if (searchQuery) {
@@ -99,7 +143,7 @@ const GrantDashboard = () => {
       return 0;
     });
 
-    const userSummary = `Showing ${filteredGrants.length} grants matched for a ${userProfile.age}-year-old ${userProfile.identifiers.join(", ")} ${userProfile.gender} with ${userProfile.citizenship} status, studying ${userProfile.education} (${userProfile.degreeType?.trim() || "Degree"}) in ${userProfile.fieldOfStudy} (${userProfile.yearOfStudy || "Year not specified"}) at a ${userProfile.gpa ? `GPA of ${userProfile.gpa}` : "GPA not specified"} in ${userProfile.country}. Ethnicity: ${userProfile.ethnicity || "Not specified"}.`;
+  const userSummary = `Showing ${filteredGrants.length} grants matched for a ${userProfile.age}-year-old ${userProfile.identifiers.join(", ")} ${userProfile.gender} with ${userProfile.citizenship} status, studying ${userProfile.education} (${userProfile.degreeType?.trim() || "Degree"}) in ${userProfile.fieldOfStudy} (${userProfile.yearOfStudy || "Year not specified"}) at a ${userProfile.gpa ? `GPA of ${userProfile.gpa}` : "GPA not specified"} in ${userProfile.country}. Ethnicity: ${userProfile.ethnicity || "Not specified"}.`;
 
   const renderGrantCards = () => (
     <motion.div
@@ -127,7 +171,7 @@ const GrantDashboard = () => {
               type: r.toLowerCase().includes("essay") ? "essay" : "other",
               label: r,
             }))}
-            matchPercentage={92}
+            matchPercentage={calculateMatchPercentage(userProfile, grant)}
             onHelpMeApply={() => handleOpenAssistant(grant)}
           />
         </motion.div>
@@ -185,7 +229,19 @@ const GrantDashboard = () => {
                 </TabsList>
 
                 <TabsContent value="all">
-                  {filteredGrants.length > 0 ? renderGrantCards() : (
+                  {filteredGrants.length > 0 ? (
+                    <>
+                      {renderGrantCards()}
+                      <div className="flex justify-center mt-8">
+                        <Button
+                          variant="outline"
+                          onClick={handleNewGrants}
+                        >
+                          Find New Grants
+                        </Button>
+                      </div>
+                    </>
+                  ) : (
                     <div className="text-center py-12">
                       <p className="text-muted-foreground text-lg">
                         No grants match your current filters.
@@ -196,6 +252,13 @@ const GrantDashboard = () => {
                         onClick={() => setSearchQuery("")}
                       >
                         Clear filters
+                      </Button>
+                      <Button
+                        variant="outline"
+                        className="mt-4 ml-2"
+                        onClick={handleNewGrants}
+                      >
+                        Find New Grants
                       </Button>
                     </div>
                   )}

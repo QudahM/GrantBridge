@@ -49,26 +49,26 @@ app.post('/api/grants', async (req, res): Promise<any> => {
     }
 
     const dynamicQuery = `
-      List as many recent scholarships or grants (from the last 3 years) for:
-      - a ${age}-year-old
-      - ${identifiers.join(", ")} ${gender}
-      - studying ${education} (${degreeType}) in ${country}
-      - Year of Study: ${yearOfStudy}
-      - Field of Study: ${fieldOfStudy}
-      - GPA: ${gpa}
-      - Household Income: ${incomeBracket} (${financialNeed ? 'financial need' : 'not financial need'})
-      - Ethnicity: ${ethnicity}
-      - Citizenship: ${citizenship}
+      List as many recent scholarships or grants (from the last and next 3 years) as possible for:
+      * a ${age}-year-old
+      * ${identifiers.join(", ")} ${gender}
+      * studying ${education} (${degreeType}) in ${country}
+      * Year of Study: ${yearOfStudy}
+      * Field of Study: ${fieldOfStudy}
+      * GPA: ${gpa}
+      * Household Income: ${incomeBracket} (${financialNeed ? 'financial need' : 'not financial need'})
+      * Ethnicity: ${ethnicity}
+      * Citizenship: ${citizenship}
       
       Provide for each grant:
-      - Title
-      - Full Description
-      - Amount (USD if possible, else "Varies")
-      - Deadline (specific date)
-      - Eligibility (bullet points)
-      - Organization
-      - Requirements
-      - Tags (e.g., STEM, Women, First-Gen)
+      * Title
+      * Full Description
+      * Amount (USD if possible, else "Varies")
+      * Deadline (specific date)
+      * Eligibility (bullet points)
+      * Organization
+      * Requirements
+      * Tags (e.g., STEM, Women, First-Gen)
 
       Respond ONLY in JSON array format like:
       [{"title":"","description":"","amount":"","deadline":"","eligibility":"","organization":"","requirements":"","tags":""}]
@@ -143,9 +143,14 @@ app.post('/api/grants', async (req, res): Promise<any> => {
       title: item.title ?? "Untitled Grant",
       organization: item.organization ?? "Unknown Organization",
       amount: item.amount ?? "Varies",
-      deadline: item.deadline ?? "2025-12-31",
-      eligibility: item.eligibility ? [item.eligibility] : ["Eligibility not specified"],
-      requirements: item.requirements ? [item.requirements] : [],
+      deadline: item.deadline ?? "2026-12-31",
+      eligibility: item.eligibility
+        ? item.eligibility.split(/[•\n]/).map((e: string) => e.trim()).filter((e: string) => e.length > 0)
+        : ["Eligibility not specified"],
+
+      requirements: item.requirements
+        ? item.requirements.split(/[•,\n]/).map((r: string) => r.trim()).filter((r: string) => r.length > 0)
+        : [],
       description: item.description ?? "",
       tags: item.tags ? item.tags.split(",").map((tag: string) => tag.trim()) : [],
       difficulty: "Medium",
