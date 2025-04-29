@@ -25,12 +25,11 @@ import {
   BrainIcon,
   ClipboardCheckIcon,
   PenIcon,
-  LightbulbIcon,
   XIcon,
   CopyIcon,
   RefreshCwIcon,
 } from "lucide-react";
-import { on } from "events";
+//import { on } from "events";
 
 interface ApplicationAssistantProps {
   isOpen?: boolean;
@@ -74,14 +73,6 @@ const ApplicationAssistant = ({
     "My background in computer science has equipped me with both technical skills and a passion for inclusive technology.",
     "Through my academic journey, I've demonstrated resilience and commitment to excellence despite systemic barriers.",
     "I aim to leverage this scholarship to further my education while creating pathways for other underrepresented students.",
-  ];
-
-  const applicationTips = [
-    "Focus on specific examples rather than general statements",
-    "Connect your personal experiences to your academic goals",
-    "Highlight any community involvement or leadership roles",
-    "Address how you'll contribute to diversity in your field",
-    "Proofread carefully for grammar and clarity",
   ];
 
   if (!isOpen) return null;
@@ -134,10 +125,6 @@ const ApplicationAssistant = ({
               <PenIcon className="h-4 w-4 mr-2" />
               Phrases
             </TabsTrigger>
-            <TabsTrigger value="tips" className="flex-1">
-              <LightbulbIcon className="h-4 w-4 mr-2" />
-              Tips
-            </TabsTrigger>
             <TabsTrigger value="explain" className="flex-1">
               <BrainIcon className="h-4 w-4 mr-2" />
               Explain
@@ -145,7 +132,7 @@ const ApplicationAssistant = ({
           </TabsList>
         </div>
 
-        <ScrollArea className="flex-1 p-4">
+        <ScrollArea className="flex-1 p-4 overflow-auto max-h-[calc(100vh-200px)]">
           <TabsContent value="checklist" className="mt-0 h-full">
             <Card>
               <CardHeader>
@@ -233,34 +220,6 @@ const ApplicationAssistant = ({
                   className="min-h-[100px]"
                 />
                 <Button className="w-full">Generate more phrases</Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="tips" className="mt-0 h-full">
-            <Card>
-              <CardHeader>
-                <CardTitle>Application Tips</CardTitle>
-                <CardDescription>
-                  Insights from successful applicants
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {applicationTips.map((tip, index) => (
-                    <div key={index} className="flex items-start space-x-3">
-                      <div className="mt-0.5 bg-primary/10 text-primary p-1 rounded-full">
-                        <LightbulbIcon className="h-4 w-4" />
-                      </div>
-                      <p className="text-sm">{tip}</p>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button variant="outline" className="w-full">
-                  View example applications
-                </Button>
               </CardFooter>
             </Card>
           </TabsContent>

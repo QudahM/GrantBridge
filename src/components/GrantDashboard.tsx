@@ -344,7 +344,12 @@ const GrantDashboard = () => {
             grantTitle={selectedGrant.title}
             grantDeadline={selectedGrant.deadline}
             grantAmount={`${selectedGrant.amount}`}
-            grantRequirements={selectedGrant.requirements}
+            grantRequirements={
+              selectedGrant.requirements
+                ?.flatMap((req) =>
+                  req.split(/,| and /i).map((r) => r.trim()).filter(Boolean)
+                ) ?? []
+            }            
             isOpen={showAssistant}
             onClose={() => setShowAssistant(false)}
             onSaveGrant={() => toggleSaveGrant(selectedGrant.id)}
