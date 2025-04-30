@@ -44,8 +44,8 @@ interface ApplicationAssistantProps {
 
 const ApplicationAssistant = ({
   isOpen = true,
-  onClose = () => {},
-  onSaveGrant = () => {},
+  onClose = () => { },
+  onSaveGrant = () => { },
   isSaved = false,
   grantTitle = "STEM Diversity Scholarship",
   grantDeadline = "May 15, 2023",
@@ -112,8 +112,9 @@ const ApplicationAssistant = ({
 
       <Tabs
         defaultValue="checklist"
-        className="flex-1 flex flex-col"
+        value={activeTab}
         onValueChange={setActiveTab}
+        className="flex-1 flex flex-col overflow-hidden"
       >
         <div className="px-4 pt-2">
           <TabsList className="w-full">
@@ -132,177 +133,170 @@ const ApplicationAssistant = ({
           </TabsList>
         </div>
 
-        <ScrollArea className="flex-1 p-4 overflow-auto max-h-[calc(100vh-200px)]">
-          <TabsContent value="checklist" className="mt-0 h-full">
-            <Card>
-              <CardHeader>
-                <CardTitle>Application Requirements</CardTitle>
-                <CardDescription>
-                  Track your progress through the application process
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {grantRequirements.map((requirement, index) => (
-                    <div key={index} className="flex items-start space-x-2">
-                      <Checkbox
-                        id={`requirement-${index}`}
-                        checked={completedItems.includes(requirement)}
-                        onCheckedChange={() => toggleCompletedItem(requirement)}
-                      />
-                      <div className="grid gap-1.5">
-                        <label
-                          htmlFor={`requirement-${index}`}
-                          className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${completedItems.includes(requirement) ? "line-through text-muted-foreground" : ""}`}
-                        >
-                          {requirement}
-                        </label>
-                        <p className="text-sm text-muted-foreground">
-                          {index === 0 &&
-                            "Focus on your unique perspective and experiences"}
-                          {index === 1 &&
-                            "Upload your current student ID or enrollment letter"}
-                          {index === 2 &&
-                            "Make sure it's your most recent transcript"}
-                          {index === 3 &&
-                            "Ideally from a professor in your field of study"}
-                        </p>
+        <ScrollArea className="flex-1 overflow-y-auto px-4 pb-4">
+          {activeTab === "checklist" && (
+            <TabsContent value="checklist" className="mt-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Application Requirements</CardTitle>
+                  <CardDescription>
+                    Track your progress through the application process
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {grantRequirements.map((requirement, index) => (
+                      <div key={index} className="flex items-start space-x-2">
+                        <Checkbox
+                          id={`requirement-${index}`}
+                          checked={completedItems.includes(requirement)}
+                          onCheckedChange={() => toggleCompletedItem(requirement)}
+                        />
+                        <div className="grid gap-1.5">
+                          <label
+                            htmlFor={`requirement-${index}`}
+                            className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${completedItems.includes(requirement) ? "line-through text-muted-foreground" : ""}`}
+                          >
+                            {requirement.replace(/^[-–•*]\s*/, "")}
+                          </label>
+                          <p className="text-sm text-muted-foreground">
+                            {index === 0 && "Focus on your unique perspective and experiences"}
+                            {index === 1 && "Upload your current student ID or enrollment letter"}
+                            {index === 2 && "Make sure it's your most recent transcript"}
+                            {index === 3 && "Ideally from a professor in your field of study"}
+                          </p>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button className="w-full">Generate application draft</Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="phrases" className="mt-0 h-full">
-            <Card>
-              <CardHeader>
-                <CardTitle>Suggested Phrases</CardTitle>
-                <CardDescription>
-                  Personalized content based on your profile
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {suggestedPhrases.map((phrase, index) => (
-                    <div
-                      key={index}
-                      className="group relative p-3 border rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
-                    >
-                      <p className="text-sm">{phrase}</p>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                            >
-                              <CopyIcon className="h-4 w-4" />
-                            </Button>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Copy to clipboard</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-              <CardFooter className="flex flex-col space-y-2">
-                <Textarea
-                  placeholder="Write your own custom phrase here..."
-                  className="min-h-[100px]"
-                />
-                <Button className="w-full">Generate more phrases</Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="explain" className="mt-0 h-full">
-            <Card>
-              <CardHeader>
-                <CardTitle>Grant Explanation</CardTitle>
-                <CardDescription>
-                  Understanding what this grant is looking for
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="p-4 bg-muted rounded-md">
-                    <h4 className="font-medium mb-2">Key Selection Criteria</h4>
-                    <ul className="space-y-2 text-sm">
-                      <li className="flex items-start space-x-2">
-                        <span className="text-primary font-bold">•</span>
-                        <span>
-                          <span className="font-medium">
-                            Academic excellence:
-                          </span>{" "}
-                          Demonstrated through GPA and coursework
-                        </span>
-                      </li>
-                      <li className="flex items-start space-x-2">
-                        <span className="text-primary font-bold">•</span>
-                        <span>
-                          <span className="font-medium">
-                            Commitment to diversity:
-                          </span>{" "}
-                          Evidence of promoting inclusion in STEM
-                        </span>
-                      </li>
-                      <li className="flex items-start space-x-2">
-                        <span className="text-primary font-bold">•</span>
-                        <span>
-                          <span className="font-medium">
-                            Leadership potential:
-                          </span>{" "}
-                          Demonstrated through extracurricular activities
-                        </span>
-                      </li>
-                      <li className="flex items-start space-x-2">
-                        <span className="text-primary font-bold">•</span>
-                        <span>
-                          <span className="font-medium">Financial need:</span>{" "}
-                          Consideration given to students with demonstrated need
-                        </span>
-                      </li>
-                    </ul>
+                    ))}
                   </div>
+                </CardContent>
+                <CardFooter>
+                  <Button className="w-full">Generate application draft</Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+          )}
 
-                  <Separator />
-
-                  <div>
-                    <h4 className="font-medium mb-2">
-                      What Makes This Grant Unique
-                    </h4>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      This scholarship specifically seeks to support
-                      underrepresented students in STEM fields who demonstrate
-                      both academic excellence and a commitment to promoting
-                      diversity in their field. The selection committee places
-                      particular emphasis on how applicants plan to use their
-                      education to create positive change.
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Unlike many other scholarships, this one considers both
-                      academic achievements and personal experiences that have
-                      shaped your perspective and goals.
-                    </p>
+          {activeTab === "phrases" && (
+            <TabsContent value="phrases" className="mt-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Suggested Phrases</CardTitle>
+                  <CardDescription>
+                    Personalized content based on your profile
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {suggestedPhrases.map((phrase, index) => (
+                      <div
+                        key={index}
+                        className="group relative p-3 border rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+                      >
+                        <p className="text-sm">{phrase}</p>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
+                              >
+                                <CopyIcon className="h-4 w-4" />
+                              </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Copy to clipboard</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    ))}
                   </div>
-                </div>
-              </CardContent>
-              <CardFooter>
-                <Button variant="outline" className="w-full">
-                  Ask a specific question
-                </Button>
-              </CardFooter>
-            </Card>
-          </TabsContent>
+                </CardContent>
+                <CardFooter className="flex flex-col space-y-2">
+                  <Textarea
+                    placeholder="Write your own custom phrase here..."
+                    className="min-h-[100px]"
+                  />
+                  <Button className="w-full">Generate more phrases</Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+          )}
+
+          {activeTab === "explain" && (
+            <TabsContent value="explain" className="mt-2">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Grant Explanation</CardTitle>
+                  <CardDescription>
+                    Understanding what this grant is looking for
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="p-4 bg-muted rounded-md">
+                      <h4 className="font-medium mb-2">Key Selection Criteria</h4>
+                      <ul className="space-y-2 text-sm">
+                        <li className="flex items-start space-x-2">
+                          <span className="text-primary font-bold">•</span>
+                          <span>
+                            <span className="font-medium">Academic excellence:</span>{" "}
+                            Demonstrated through GPA and coursework
+                          </span>
+                        </li>
+                        <li className="flex items-start space-x-2">
+                          <span className="text-primary font-bold">•</span>
+                          <span>
+                            <span className="font-medium">Commitment to diversity:</span>{" "}
+                            Evidence of promoting inclusion in STEM
+                          </span>
+                        </li>
+                        <li className="flex items-start space-x-2">
+                          <span className="text-primary font-bold">•</span>
+                          <span>
+                            <span className="font-medium">Leadership potential:</span>{" "}
+                            Demonstrated through extracurricular activities
+                          </span>
+                        </li>
+                        <li className="flex items-start space-x-2">
+                          <span className="text-primary font-bold">•</span>
+                          <span>
+                            <span className="font-medium">Financial need:</span>{" "}
+                            Consideration given to students with demonstrated need
+                          </span>
+                        </li>
+                      </ul>
+                    </div>
+
+                    <Separator />
+
+                    <div>
+                      <h4 className="font-medium mb-2">What Makes This Grant Unique</h4>
+                      <p className="text-sm text-muted-foreground mb-4">
+                        This scholarship specifically seeks to support underrepresented students
+                        in STEM fields who demonstrate both academic excellence and a commitment
+                        to promoting diversity in their field. The selection committee places
+                        particular emphasis on how applicants plan to use their education to
+                        create positive change.
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Unlike many other scholarships, this one considers both academic
+                        achievements and personal experiences that have shaped your perspective
+                        and goals.
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button variant="outline" className="w-full">
+                    Ask a specific question
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+          )}
         </ScrollArea>
       </Tabs>
 
