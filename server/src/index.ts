@@ -2,7 +2,6 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
-import { link } from 'fs';
 
 dotenv.config();
 
@@ -165,6 +164,94 @@ app.post('/api/grants', async (req, res): Promise<any> => {
   } catch (error) {
     console.error("Internal server error:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+});
+
+// NEW: Application Draft Endpoint for /api/sonar
+app.post("/api/sonar", async (req, res): Promise<any> => {
+  const { question } = req.body;
+
+  if (!question || typeof question !== "string") {
+    return res.status(400).json({ error: "Missing or invalid question." });
+  }
+
+  try {
+    const sonarResponse = await fetch("https://api.perplexity.ai/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.SONAR_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "sonar",
+        messages: [
+          { role: "user", content: question }
+        ],
+      }),
+    });
+
+    const data = await sonarResponse.json() as {
+      choices?: { message?: { content?: string } }[];
+    };
+    const answer = data.choices?.[0]?.message?.content ?? "No answer generated.";
+    res.json({ answer });
+  } catch (error) {
+    console.error("Error calling Sonar:", error);
+    res.status(500).json({ error: "Failed to generate draft from Sonar." });
+  }
+});
+
+// NEW: Requirement Descriptions Endpoint
+app.post("/api/requirement-descriptions", async (req, res): Promise<any> => {
+  const { requirements } = req.body;
+
+  if (!Array.isArray(requirements) || requirements.length === 0) {
+    return res.status(400).json({ error: "Invalid or missing requirements array." });
+  }
+
+  const prompt = `
+For each of the following grant application requirements, write a 5-8 words description (no longer than 10 words) that clearly explains what it is and how to fulfill it.
+
+Return only helpful, concise descriptions. Avoid repeating the requirement title.
+
+${requirements.map((r, i) => `${i + 1}. ${r}`).join("\n")}
+
+Respond in JSON format:
+{
+  "descriptions": [
+    "Description for requirement 1",
+    "Description for requirement 2"
+  ]
+}
+`.trim();
+
+  try {
+    const sonarResponse = await fetch("https://api.perplexity.ai/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${process.env.SONAR_API_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "sonar",
+        messages: [{ role: "user", content: prompt }],
+      }),
+    });
+
+    const data = await sonarResponse.json() as {
+      choices?: { message?: { content?: string } }[];
+    };
+    const text = data.choices?.[0]?.message?.content ?? "";
+    const regex = /\{[\s\S]*\}/;
+    const match = regex.exec(text); // grab only the JSON block
+
+    if (!match) return res.status(500).json({ error: "Failed to parse Sonar response." });
+
+    const parsed = JSON.parse(match[0]);
+    return res.json(parsed);
+  } catch (error) {
+    console.error("Sonar requirements error:", error);
+    return res.status(500).json({ error: "Failed to generate requirement descriptions." });
   }
 });
 

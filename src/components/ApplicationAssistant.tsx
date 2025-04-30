@@ -29,6 +29,7 @@ import {
   CopyIcon,
   RefreshCwIcon,
 } from "lucide-react";
+import { set } from "date-fns";
 //import { on } from "events";
 
 interface ApplicationAssistantProps {
@@ -59,12 +60,57 @@ const ApplicationAssistant = ({
 }: ApplicationAssistantProps) => {
   const [activeTab, setActiveTab] = useState("checklist");
   const [completedItems, setCompletedItems] = useState<string[]>([]);
+  const [draftResponse, setDraftResponse] = useState<string | null>(null);
+  const [requirementDescriptions, setRequirementDescriptions] = useState<string[]>([]);
+  const [isLoadingDraft, setisLoadingDraft] = useState(false);
+
+  React.useEffect(() => {
+    const fetchDescriptions = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/requirement-descriptions", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ requirements: grantRequirements }),
+        });
+
+        const data = await res.json();
+        setRequirementDescriptions(data.descriptions || []);
+      } catch (err) {
+        console.error("Failed to load requirement descriptions", err);
+        setRequirementDescriptions([]);
+      }
+    };
+
+    fetchDescriptions();
+  }, [grantRequirements]);
 
   const toggleCompletedItem = (item: string) => {
     if (completedItems.includes(item)) {
       setCompletedItems(completedItems.filter((i) => i !== item));
     } else {
       setCompletedItems([...completedItems, item]);
+    }
+  };
+
+  const handleGenerateDraft = async () => {
+    setisLoadingDraft(true);
+    setDraftResponse(null);
+    const query = `Based on the following grant requirements, help me draft an application: ${grantRequirements.join("; ")}`;
+
+    try {
+      const response = await fetch("http://localhost:5000/api/sonar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question: query })
+      });
+
+      const data = await response.json();
+      setDraftResponse(data.answer || "No response received.");
+    } catch (error) {
+      console.error("Error generating draft:", error);
+      setDraftResponse("There was an error generating your draft. Please try again.");
+    } finally {
+      setisLoadingDraft(false);
     }
   };
 
@@ -159,11 +205,8 @@ const ApplicationAssistant = ({
                           >
                             {requirement.replace(/^[-–•*]\s*/, "")}
                           </label>
-                          <p className="text-sm text-muted-foreground">
-                            {index === 0 && "Focus on your unique perspective and experiences"}
-                            {index === 1 && "Upload your current student ID or enrollment letter"}
-                            {index === 2 && "Make sure it's your most recent transcript"}
-                            {index === 3 && "Ideally from a professor in your field of study"}
+                          <p className="text-sm text-foreground">
+                            {requirementDescriptions[index] || "Description not available."}
                           </p>
                         </div>
                       </div>
@@ -171,9 +214,33 @@ const ApplicationAssistant = ({
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button className="w-full">Generate application draft</Button>
+                  <Button className="w-full" onClick={handleGenerateDraft}>Generate application draft</Button>
                 </CardFooter>
               </Card>
+              {isLoadingDraft && (
+                <Card className="mt-4">
+                  <CardHeader>
+                    <CardTitle>Loading draft...</CardTitle>
+                    <CardDescription>Generating your draft application...</CardDescription>
+                  </CardHeader>
+                </Card>
+              )}
+
+              {!isLoadingDraft && draftResponse && (
+                <Card className="mt-4">
+                  <CardHeader>
+                    <CardTitle>Draft Application</CardTitle>
+                    <CardDescription>
+                      Here is a draft application based on the given requirements
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="whitespace-pre-line text-sm text-foreground">
+                      {draftResponse}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
             </TabsContent>
           )}
 
