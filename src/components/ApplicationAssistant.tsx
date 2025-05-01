@@ -29,8 +29,6 @@ import {
   CopyIcon,
   RefreshCwIcon,
 } from "lucide-react";
-import { set } from "date-fns";
-//import { on } from "events";
 
 interface ApplicationAssistantProps {
   isOpen?: boolean;
@@ -122,6 +120,13 @@ const ApplicationAssistant = ({
   ];
 
   if (!isOpen) return null;
+
+  const formatDraftText = (text: string): string => {
+    return text
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/^##\s*(.*)$/gm, "<div class=\"text-base font-bold mt-3 \">$1</div>")
+      .replace(/\[\d+\]/g, "");
+  }
 
   return (
     <motion.div
@@ -235,9 +240,9 @@ const ApplicationAssistant = ({
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="whitespace-pre-line text-sm text-foreground">
-                      {draftResponse}
-                    </div>
+                    <div className="whitespace-pre-line text-sm text-foreground"
+                      dangerouslySetInnerHTML={{ __html: formatDraftText(draftResponse) }}
+                    />
                   </CardContent>
                 </Card>
               )}
@@ -369,11 +374,8 @@ const ApplicationAssistant = ({
 
       <div className="p-4 border-t">
         <div className="flex space-x-2">
-          <Button variant="default" className="flex-1">
-            Start application
-          </Button>
           <Button
-            variant={isSaved ? "destructive" : "outline"}
+            variant={isSaved ? "destructive" : "default"}
             className="flex-1"
             onClick={onSaveGrant}
           >
