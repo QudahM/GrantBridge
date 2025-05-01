@@ -173,7 +173,11 @@ const GrantCard = ({
                       point.trim() && (
                         <li key={`${i}-${j}`} className="text-sm flex items-start">
                           <span className="text-green-500 mr-2">✓</span>
-                          {point.replace(/^[-–•*]\s*/, '').trim()}
+                          {(() => {
+                            const text = point.replace(/^[-–•*]\s*/, '').trim();
+                            const capitalized = text.charAt(0).toUpperCase() + text.slice(1);
+                            return capitalized.endsWith(".") ? capitalized : capitalized + ".";
+                          })()}
                         </li>
                       )
                     ))
@@ -195,7 +199,10 @@ const GrantCard = ({
                       trimmed && (
                         <li key={`${i}-${j}`} className="text-sm flex items-start">
                           <span className="text-primary mr-2">•</span>
-                          {trimmed}
+                          {(() => {
+                            const capitalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
+                            return capitalized.endsWith(".") ? capitalized : capitalized + ".";
+                          })()}
                         </li>
                       )
                     );
