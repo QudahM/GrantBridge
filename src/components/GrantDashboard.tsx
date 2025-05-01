@@ -31,27 +31,21 @@ const calculateMatchPercentage = (userProfile: UserProfile, grant: Grant) => {
     userProfile.gpa?.toString() || "",
     userProfile.country || "",
     userProfile.ethnicity || "",
-  ].map((answer) => answer.toLowerCase());
+  ].map((answer) => answer.toLowerCase().trim());
 
-  const grantCriteria = [
+  const grantText = [
     ...(grant.eligibility || []),
     ...(grant.requirements || []),
-  ].map((c) => c.toLowerCase());
+  ]
+    .join(" ")
+    .toLowerCase();
 
-  if (grantCriteria.length === 0) {
-    return baseScore;
-  }
+  if (!grantText) return baseScore;
 
-  let matched = 0;
-  grantCriteria.forEach((criteria) => {
-    if (userAnswers.some((answer) => criteria.includes(answer))) {
-      matched++;
-    }
-  });
+  const matched = userAnswers.filter((ans) => grantText.includes(ans)).length;
+  const matchRatio = matched / userAnswers.length;
 
-  const matchRatio = matched / grantCriteria.length;
   const finalScore = Math.min(100, Math.round(baseScore + matchRatio * 50));
-
   return finalScore;
 };
 

@@ -46,7 +46,7 @@ const GrantCard = ({
     { type: "enrollment", label: "Proof of enrollment" },
   ],
   matchPercentage = 92,
-  onHelpMeApply = () => {},
+  onHelpMeApply = () => { },
   link = "#",
 }: GrantCardProps) => {
   const [isFlipped, setIsFlipped] = useState(false);
@@ -166,38 +166,41 @@ const GrantCard = ({
                 Why you're eligible:
               </h4>
               <ul className="space-y-1">
-              {eligibilityHighlights.flatMap((highlight, i) =>
-                highlight
-                  .split(" - ")
-                  .map((point, j) => (
-                    point.trim() && (
-                      <li key={`${i}-${j}`} className="text-sm flex items-start">
-                        <span className="text-green-500 mr-2">✓</span>
-                        {point.replace(/^[-–•*]\s*/, '').trim()}
-                      </li>
-                    )
-                  ))
-              )}
+                {eligibilityHighlights.flatMap((highlight, i) =>
+                  highlight
+                    .split(/[•*;]| and /i)
+                    .map((point, j) => (
+                      point.trim() && (
+                        <li key={`${i}-${j}`} className="text-sm flex items-start">
+                          <span className="text-green-500 mr-2">✓</span>
+                          {point.replace(/^[-–•*]\s*/, '').trim()}
+                        </li>
+                      )
+                    ))
+                )}
               </ul>
             </div>
 
             <div className="mb-4">
               <h4 className="text-sm font-semibold mb-2">Requirements:</h4>
               <ul className="space-y-1">
-                {requirements.flatMap((req, i) =>
-                  req.label.split(/,| and /i).map((item, j) => {
+                {requirements.flatMap((req, i) => {
+                  // First, clean up the text: remove newlines and normalize semicolons
+                  const cleaned = req.label.replace(/\n/g, " ").replace(/\s*[,;]\s*/g, "; ");
+
+                  // Now split ONLY on semicolons — this avoids breaking numeric ranges like "500-1000"
+                  return cleaned.split(";").map((item, j) => {
                     const trimmed = item.trim();
-                    const capitalized = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
                     return (
                       trimmed && (
                         <li key={`${i}-${j}`} className="text-sm flex items-start">
                           <span className="text-primary mr-2">•</span>
-                          {capitalized.replace(/^[-–•*]\s*/, '')}
+                          {trimmed}
                         </li>
                       )
                     );
-                  })
-                )}
+                  });
+                })}
               </ul>
             </div>
 

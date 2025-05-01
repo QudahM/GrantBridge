@@ -61,6 +61,28 @@ const ApplicationAssistant = ({
   const [draftResponse, setDraftResponse] = useState<string | null>(null);
   const [requirementDescriptions, setRequirementDescriptions] = useState<string[]>([]);
   const [isLoadingDraft, setisLoadingDraft] = useState(false);
+  const [grantCriteria, setGrantCriteria] = useState<string | null>(null);
+  const [grantUniqueFactor, setGrantUniqueFactor] = useState<string | null>(null);
+
+  const fetchGrantExplanation = async () => {
+    try {
+      const res = await fetch("http://localhost:5000/api/explain-grant", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: grantTitle, requirements: grantRequirements }),
+      });
+
+      const data = await res.json();
+      setGrantCriteria(data.criteria);
+      setGrantUniqueFactor(data.unique);
+    } catch (err) {
+      console.error("Failed to fetch grant explanation", err);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchGrantExplanation();
+  }, [grantTitle]);
 
   React.useEffect(() => {
     const fetchDescriptions = async () => {
@@ -75,7 +97,6 @@ const ApplicationAssistant = ({
         setRequirementDescriptions(data.descriptions || []);
       } catch (err) {
         console.error("Failed to load requirement descriptions", err);
-        setRequirementDescriptions([]);
       }
     };
 
@@ -112,18 +133,21 @@ const ApplicationAssistant = ({
     }
   };
 
+  /*
   const suggestedPhrases = [
     "As a woman in STEM, I've navigated unique challenges that have strengthened my resolve and perspective.",
     "My background in computer science has equipped me with both technical skills and a passion for inclusive technology.",
     "Through my academic journey, I've demonstrated resilience and commitment to excellence despite systemic barriers.",
     "I aim to leverage this scholarship to further my education while creating pathways for other underrepresented students.",
   ];
+  */
 
   if (!isOpen) return null;
 
   const formatDraftText = (text: string): string => {
     return text
-      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>")
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // bold markdown
+      .replace(/\*(.*?)\*/g, "<strong>$1</strong>")     // bold asterisk-surrounded text
       .replace(/^##\s*(.*)$/gm, "<div class=\"text-base font-bold mt-3 \">$1</div>")
       .replace(/\[\d+\]/g, "");
   }
@@ -250,7 +274,7 @@ const ApplicationAssistant = ({
               )}
             </TabsContent>
           )}
-    
+
           {/* Commented out for now to find a better replacement
           {activeTab === "phrases" && (
             <TabsContent value="phrases" className="mt-2">
@@ -313,35 +337,18 @@ const ApplicationAssistant = ({
                   <div className="space-y-4">
                     <div className="p-4 bg-muted rounded-md">
                       <h4 className="font-medium mb-2">Key Selection Criteria</h4>
-                      <ul className="space-y-2 text-sm">
-                        <li className="flex items-start space-x-2">
-                          <span className="text-primary font-bold">•</span>
-                          <span>
-                            <span className="font-medium">Academic excellence:</span>{" "}
-                            Demonstrated through GPA and coursework
-                          </span>
-                        </li>
-                        <li className="flex items-start space-x-2">
-                          <span className="text-primary font-bold">•</span>
-                          <span>
-                            <span className="font-medium">Commitment to diversity:</span>{" "}
-                            Evidence of promoting inclusion in STEM
-                          </span>
-                        </li>
-                        <li className="flex items-start space-x-2">
-                          <span className="text-primary font-bold">•</span>
-                          <span>
-                            <span className="font-medium">Leadership potential:</span>{" "}
-                            Demonstrated through extracurricular activities
-                          </span>
-                        </li>
-                        <li className="flex items-start space-x-2">
-                          <span className="text-primary font-bold">•</span>
-                          <span>
-                            <span className="font-medium">Financial need:</span>{" "}
-                            Consideration given to students with demonstrated need
-                          </span>
-                        </li>
+                      <ul className="text-sm text-foreground list-disc list-inside space-y-1">
+                        {(Array.isArray(grantCriteria) ? grantCriteria : [])
+                          .map((item, index) => {
+                            const [title, ...rest] = item.replace(/^•\s*/, "").split(":");
+                            const description = rest.join(":").trim(); // in case ":" appears in description
+                            return (
+                              <li key={index}>
+                                <span className="font-medium">{title.trim()}:</span>{" "}
+                                <span>{description}</span>
+                              </li>
+                            );
+                          })}
                       </ul>
                     </div>
 
@@ -349,17 +356,8 @@ const ApplicationAssistant = ({
 
                     <div>
                       <h4 className="font-medium mb-2">What Makes This Grant Unique</h4>
-                      <p className="text-sm text-muted-foreground mb-4">
-                        This scholarship specifically seeks to support underrepresented students
-                        in STEM fields who demonstrate both academic excellence and a commitment
-                        to promoting diversity in their field. The selection committee places
-                        particular emphasis on how applicants plan to use their education to
-                        create positive change.
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        Unlike many other scholarships, this one considers both academic
-                        achievements and personal experiences that have shaped your perspective
-                        and goals.
+                      <p className="text-sm text-muted-foreground whitespace-pre-line">
+                        {(grantUniqueFactor || "Loading...").replace(/\[\d+\]/g, "")}
                       </p>
                     </div>
                   </div>
