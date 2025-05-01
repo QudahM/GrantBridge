@@ -173,10 +173,12 @@ const ApplicationAssistant = ({
               <ClipboardCheckIcon className="h-4 w-4 mr-2" />
               Checklist
             </TabsTrigger>
+            {/* Commented out for now to find a better replacement
             <TabsTrigger value="phrases" className="flex-1">
               <PenIcon className="h-4 w-4 mr-2" />
               Phrases
             </TabsTrigger>
+            */}
             <TabsTrigger value="explain" className="flex-1">
               <BrainIcon className="h-4 w-4 mr-2" />
               Explain
@@ -248,7 +250,8 @@ const ApplicationAssistant = ({
               )}
             </TabsContent>
           )}
-
+    
+          {/* Commented out for now to find a better replacement
           {activeTab === "phrases" && (
             <TabsContent value="phrases" className="mt-2">
               <Card>
@@ -296,7 +299,7 @@ const ApplicationAssistant = ({
               </Card>
             </TabsContent>
           )}
-
+          */}
           {activeTab === "explain" && (
             <TabsContent value="explain" className="mt-2">
               <Card>
