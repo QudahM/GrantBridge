@@ -341,7 +341,7 @@ const GrantDashboard = () => {
             grantRequirements={
               selectedGrant.requirements
                 ?.flatMap((req) =>
-                  req.split(/,| and /i).map((r) => r.trim()).filter(Boolean)
+                  req.split(/[;,]/).map((r) => r.trim()).filter(Boolean)
                 ) ?? []
             }            
             isOpen={showAssistant}

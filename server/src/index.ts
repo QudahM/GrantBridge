@@ -153,7 +153,7 @@ app.post('/api/grants', async (req, res): Promise<any> => {
 
       requirements: item.requirements
         ? item.requirements
-          .split(/(?:•|\n|;)(?!\d)/) // split on •, \n, or ; unless followed by digit
+          .split(/(?<!\band\b)(?:•|\n|;)/i) // split on •, \n, or ; unless followed by digit
           .map((r: string) => r.trim())
           .filter((r: string) => r.length > 0)
         : [],

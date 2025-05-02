@@ -168,7 +168,7 @@ const GrantCard = ({
               <ul className="space-y-1">
                 {eligibilityHighlights.flatMap((highlight, i) =>
                   highlight
-                    .split(/[•*;]| and /i)
+                    .split(/[•*;,]| and /i)
                     .map((point, j) => (
                       point.trim() && (
                         <li key={`${i}-${j}`} className="text-sm flex items-start">

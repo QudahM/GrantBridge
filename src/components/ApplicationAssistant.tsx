@@ -63,28 +63,39 @@ const ApplicationAssistant = ({
   const [isLoadingDraft, setisLoadingDraft] = useState(false);
   const [grantCriteria, setGrantCriteria] = useState<string | null>(null);
   const [grantUniqueFactor, setGrantUniqueFactor] = useState<string | null>(null);
+  const [lastFetchedRequirements, setLastFetchedRequirements] = useState<string>("");
+  const [lastFetchedTitle, setLastFetchedTitle] = useState<string>("");
 
-  const fetchGrantExplanation = async () => {
-    try {
-      const res = await fetch("http://localhost:5000/api/explain-grant", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title: grantTitle, requirements: grantRequirements }),
-      });
-
-      const data = await res.json();
-      setGrantCriteria(data.criteria);
-      setGrantUniqueFactor(data.unique);
-    } catch (err) {
-      console.error("Failed to fetch grant explanation", err);
-    }
-  };
+  const getStableRequirementsKey = (reqs: string[]) => 
+    reqs.map(r => r.trim().toLowerCase()).sort().join("||");
 
   React.useEffect(() => {
+    if (!grantTitle || grantTitle === lastFetchedTitle) return;
+
+    const fetchGrantExplanation = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/explain-grant", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: grantTitle, requirements: grantRequirements }),
+        });
+
+        const data = await res.json();
+        setGrantCriteria(data.criteria);
+        setGrantUniqueFactor(data.unique);
+        setLastFetchedTitle(grantTitle);
+      } catch (err) {
+        console.error("Failed to fetch grant explanation", err);
+      }
+    };
+
     fetchGrantExplanation();
-  }, [grantTitle]);
+  }, [grantTitle, grantRequirements, lastFetchedTitle]);
 
   React.useEffect(() => {
+    const reqKey = `${grantTitle?.trim().toLowerCase()}::${getStableRequirementsKey(grantRequirements)}`;
+    if (reqKey === lastFetchedRequirements) return; // Avoid unnecessary fetches
+
     const fetchDescriptions = async () => {
       try {
         const res = await fetch("http://localhost:5000/api/requirement-descriptions", {
@@ -95,13 +106,14 @@ const ApplicationAssistant = ({
 
         const data = await res.json();
         setRequirementDescriptions(data.descriptions || []);
+        setLastFetchedRequirements(reqKey); // Update last fetched requirements
       } catch (err) {
         console.error("Failed to load requirement descriptions", err);
       }
     };
 
     fetchDescriptions();
-  }, [grantRequirements]);
+  }, [grantRequirements, grantTitle, lastFetchedRequirements]);
 
   const toggleCompletedItem = (item: string) => {
     if (completedItems.includes(item)) {
@@ -234,7 +246,11 @@ const ApplicationAssistant = ({
                             htmlFor={`requirement-${index}`}
                             className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${completedItems.includes(requirement) ? "line-through text-muted-foreground" : ""}`}
                           >
-                            {requirement.replace(/^[-–•*]\s*/, "")}
+                            {(() => {
+                              const cleaned = requirement.replace(/^[-–•*]\s*/, "").trim();
+                              const capitalized = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
+                              return capitalized.endsWith(".") ? capitalized : capitalized + ".";
+                            })()}
                           </label>
                           <p className="text-sm text-foreground">
                             {requirementDescriptions[index] || "Description not available."}

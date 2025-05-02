@@ -146,7 +146,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete = () => {} }
               <FormGroup>
                 <Label>Gender</Label>
                 <RadioGroup value={userData.genderIdentity} onValueChange={(value) => updateUserData("genderIdentity", value)} className="grid grid-cols-2 gap-2">
-                  {['woman', 'man', 'non-binary', 'prefer-not-to-say'].map((g) => (
+                  {['Woman', 'Man', 'Non-binary', 'Prefer not to say'].map((g) => (
                     <div key={g} className="flex items-center space-x-2">
                       <RadioGroupItem value={g} id={g} />
                       <Label htmlFor={g}>{g.replace('-', ' ')}</Label>
@@ -172,14 +172,14 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete = () => {} }
                 <Select value={userData.schoolStatus} onValueChange={(value) => updateUserData("schoolStatus", value)}>
                   <SelectTrigger><SelectValue placeholder="Select education status" /></SelectTrigger>
                   <SelectContent>
-                    {['high-school', 'undergraduate', 'graduate', 'not-in-school'].map((s) => (
+                    {['High School', 'Undergraduate', 'Graduate', 'Not in School'].map((s) => (
                       <SelectItem key={s} value={s}>{s.replace('-', ' ')}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </FormGroup>
 
-              {(userData.schoolStatus === 'undergraduate' || userData.schoolStatus === 'graduate') && (
+              {(userData.schoolStatus === 'Undergraduate' || userData.schoolStatus === 'Graduate') && (
                 <>
                   <FormGroup>
                     <Label>Degree Type</Label>
@@ -219,14 +219,14 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete = () => {} }
             <CardContent className="space-y-6">
               <FormGroup>
                 <Label>Household Income</Label>
-                <Select value={userData.incomeBracket} onValueChange={(value) => {updateUserData("incomeBracket", value);updateUserData("financialNeed", value === "under-25k");}}>
+                <Select value={userData.incomeBracket} onValueChange={(value) => {updateUserData("incomeBracket", value);updateUserData("financialNeed", value === "Under-25k");}}>
                   <SelectTrigger><SelectValue placeholder="Select income" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="under-25k">Under $25,000</SelectItem>
+                    <SelectItem value="Under-25k">Under $25,000</SelectItem>
                     <SelectItem value="25k-50k">$25,000 - $50,000</SelectItem>
                     <SelectItem value="50k-75k">$50,000 - $75,000</SelectItem>
                     <SelectItem value="75k-100k">$75,000 - $100,000</SelectItem>
-                    <SelectItem value="over-100k">Over $100,000</SelectItem>
+                    <SelectItem value="Over-100k">Over $100,000</SelectItem>
                   </SelectContent>
                 </Select>
               </FormGroup>
