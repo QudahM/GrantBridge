@@ -1,30 +1,83 @@
-# React + TypeScript + Vite
+# 🧩 GrantBridge
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**GrantBridge** is a smart web application that helps users discover, understand, and apply to scholarships and grants. It uses the Perplexity Sonar API to break down eligibility, track progress, and generate personalized application drafts.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🖼️ Screenshots
 
-## Expanding the ESLint configuration
+![Home Page](./screenshots/Grantbridge_mainpage.png)
 
-If you are developing a production application, we recommend updating the configuration to enable type aware lint rules:
+## 🌐 Live Demo
 
-- Configure the top-level `parserOptions` property like this:
+Check it out here: [grantbridge.vercel.app](https://grantbridge.vercel.app)
 
-```js
-export default {
-  // other rules...
-  parserOptions: {
-    ecmaVersion: 'latest',
-    sourceType: 'module',
-    project: ['./tsconfig.json', './tsconfig.node.json'],
-    tsconfigRootDir: __dirname,
-  },
-}
+---
+
+## ✨ Features
+
+- 🔍 **Grant Discovery** – AI-powered search to find relevant scholarships based on your profile.
+- 📋 **Application Assistant** – Understand eligibility criteria and get simplified requirement breakdowns.
+- ✅ **Checklist Tracker** – Mark off completed requirements as you go.
+- 🧠 **Smart Suggestions** – Get phrase suggestions and application draft support.
+- 💾 **Saved Grants** – Bookmark opportunities for later.
+
+---
+
+## 🧠 Tech Stack
+
+**Frontend:**  
+React • TypeScript • TailwindCSS • Framer Motion • shadcn/ui
+
+**Backend:**  
+Node.js • Express • Perplexity Sonar API
+
+---
+
+## 🚀 Getting Started
+
+### 📦 Prerequisites
+
+- Node.js (v18+ recommended)
+- pnpm or npm
+
+### 🔧 Installation
+
+```bash
+# Clone the repository
+git clone https://github.com/qudahm/grantbridge.git
+cd grantbridge
+
+# Install dependencies
+pnpm install
+
+# Run development server
+pnpm dev
 ```
 
-- Replace `plugin:@typescript-eslint/recommended` to `plugin:@typescript-eslint/recommended-type-checked` or `plugin:@typescript-eslint/strict-type-checked`
-- Optionally add `plugin:@typescript-eslint/stylistic-type-checked`
-- Install [eslint-plugin-react](https://github.com/jsx-eslint/eslint-plugin-react) and add `plugin:react/recommended` & `plugin:react/jsx-runtime` to the `extends` list
+### ⚙️ Environment Setup
+
+1. Create a `.env` file in the root of the project:
+
+    ```bash
+    touch .env
+    ```
+
+2. Add the following environment variables:
+
+    ```env
+    PORT=5000
+    PERPLEXITY_API_KEY=your_api_key_here
+    ```
+
+---
+
+## 📬 Contact
+
+Created by [@qudahm](https://github.com/qudahm) – feel free to reach out!
+
+---
+
+## 🧾 License
+
+- This project is open source under the MIT License.

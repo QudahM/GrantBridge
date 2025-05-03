@@ -67,6 +67,19 @@ const GrantCard = ({
     return "text-green-500";
   };
 
+  // Format the amount range to be more readable
+  // e.g., "$500 - $1,000" to "$1,000 - $500" (if needed)
+  const formatAmountRange = (amount: string) => {
+    const match = amount.match(/\$?([\d,]+)\s*[-–]\s*\$?([\d,]+)/);
+    if (!match) return amount; // Return original if no match
+
+    const num1 = parseInt(match[1].replace(/,/g, ""));
+    const num2 = parseInt(match[2].replace(/,/g, ""));
+
+    const [high, low] = num1 > num2 ? [num1, num2] : [num2, num1];
+    return `$${high.toLocaleString()} - $${low.toLocaleString()}`;
+  }
+
   return (
     <div className="relative w-full h-[420px] perspective-[1000px]">
       <motion.div
@@ -114,7 +127,8 @@ const GrantCard = ({
 
             <div className="flex items-center text-lg font-semibold mb-6 text-primary">
               <Award className="mr-2 h-5 w-5" />
-              {amount}
+              {/* Format the amount range to be more readable */}
+              {formatAmountRange(amount)} 
             </div>
 
             <div className="mt-auto flex justify-between items-center">
