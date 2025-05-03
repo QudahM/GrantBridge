@@ -6,7 +6,7 @@
 
 ## 🖼️ Screenshots
 
-![Home Page](./screenshots/Grantbridge_mainpage.png)
+![Home Page](./public/screenshots/Grantbridge_mainpage.png)
 
 ## 🌐 Live Demo
 
