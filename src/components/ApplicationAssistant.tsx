@@ -16,19 +16,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
+  BrainIcon,
+  ClipboardCheckIcon,
+  XIcon,
+  PenIcon,
+  CopyIcon,
+} from "lucide-react";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  BrainIcon,
-  ClipboardCheckIcon,
-  PenIcon,
-  XIcon,
-  CopyIcon,
-  RefreshCwIcon,
-} from "lucide-react";
 
 interface ApplicationAssistantProps {
   isOpen?: boolean;
@@ -39,6 +38,7 @@ interface ApplicationAssistantProps {
   grantDeadline?: string;
   grantAmount?: string;
   grantRequirements?: string[];
+  grantLink?: string;
 }
 
 const ApplicationAssistant = ({
@@ -55,6 +55,7 @@ const ApplicationAssistant = ({
     "Academic transcript",
     "Letter of recommendation",
   ],
+  grantLink = "https://example.com/grant-application",
 }: ApplicationAssistantProps) => {
   const [activeTab, setActiveTab] = useState("checklist");
   const [completedItems, setCompletedItems] = useState<string[]>([]);
@@ -65,8 +66,13 @@ const ApplicationAssistant = ({
   const [grantUniqueFactor, setGrantUniqueFactor] = useState<string | null>(null);
   const [lastFetchedRequirements, setLastFetchedRequirements] = useState<string>("");
   const [lastFetchedTitle, setLastFetchedTitle] = useState<string>("");
+  const [userQuestion, setUserQuestion] = useState("");
+  const [isAsking, setIsAsking] = useState(false);
+  const [showChatInput, setShowChatInput] = useState(false);
+  const [chatHistory, setChatHistory] = useState<{ question: string; answer: string }[]>([]);
+  const [showAllChats, setShowAllChats] = useState(false);
 
-  const getStableRequirementsKey = (reqs: string[]) => 
+  const getStableRequirementsKey = (reqs: string[]) =>
     reqs.map(r => r.trim().toLowerCase()).sort().join("||");
 
   React.useEffect(() => {
@@ -145,14 +151,10 @@ const ApplicationAssistant = ({
     }
   };
 
-  /*
-  const suggestedPhrases = [
+  /*  const suggestedPhrases = [
     "As a woman in STEM, I've navigated unique challenges that have strengthened my resolve and perspective.",
     "My background in computer science has equipped me with both technical skills and a passion for inclusive technology.",
-    "Through my academic journey, I've demonstrated resilience and commitment to excellence despite systemic barriers.",
-    "I aim to leverage this scholarship to further my education while creating pathways for other underrepresented students.",
-  ];
-  */
+  ];*/
 
   if (!isOpen) return null;
 
@@ -162,6 +164,13 @@ const ApplicationAssistant = ({
       .replace(/\*(.*?)\*/g, "<strong>$1</strong>")     // bold asterisk-surrounded text
       .replace(/^##\s*(.*)$/gm, "<div class=\"text-base font-bold mt-3 \">$1</div>")
       .replace(/\[\d+\]/g, "");
+  }
+
+  const formatExplainText = (text: string): string => {
+    return text
+      .replace(/\[\d+\]/g, "")                         // Remove [1], [2], etc.
+      .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Bold **text**
+      .replace(/\*(.*?)\*/g, "<strong>$1</strong>");   // Bold *text*
   }
 
   return (
@@ -175,7 +184,18 @@ const ApplicationAssistant = ({
       <div className="flex items-center justify-between p-4 border-b">
         <div>
           <h2 className="text-xl font-semibold">Application Assistant</h2>
-          <p className="text-sm text-muted-foreground">{grantTitle}</p>
+          {grantLink ? (
+            <a
+              href={grantLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-sm text-primary hover:underline hover:text-primary/80 transition-colors"
+            >
+              {grantTitle}
+            </a>
+          ) : (
+            <p className="text-sm text-muted-foreground">{grantTitle}</p>
+          )}
         </div>
         <Button variant="ghost" size="icon" onClick={onClose}>
           <XIcon className="h-5 w-5" />
@@ -190,10 +210,6 @@ const ApplicationAssistant = ({
             </Badge>
             <h3 className="text-lg font-medium">{grantAmount}</h3>
           </div>
-          <Button size="sm" variant="outline" className="gap-1">
-            <RefreshCwIcon className="h-4 w-4" />
-            Refresh suggestions
-          </Button>
         </div>
       </div>
 
@@ -229,7 +245,7 @@ const ApplicationAssistant = ({
                 <CardHeader>
                   <CardTitle>Application Requirements</CardTitle>
                   <CardDescription>
-                    Track your progress through the application process
+                    Track your progress through the application process.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -253,7 +269,10 @@ const ApplicationAssistant = ({
                             })()}
                           </label>
                           <p className="text-sm text-foreground">
-                            {requirementDescriptions[index] || "Description not available."}
+                            {(() => {
+                              const desc = requirementDescriptions[index]?.replace(/\[\d+\]/g, "") || "Description not available";
+                              return desc.trim().endsWith(".") ? desc.trim() : desc.trim() + ".";
+                            })()}
                           </p>
                         </div>
                       </div>
@@ -346,7 +365,7 @@ const ApplicationAssistant = ({
                 <CardHeader>
                   <CardTitle>Grant Explanation</CardTitle>
                   <CardDescription>
-                    Understanding what this grant is looking for
+                    Understanding what this grant is looking for.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -361,7 +380,13 @@ const ApplicationAssistant = ({
                             return (
                               <li key={index}>
                                 <span className="font-medium">{title.trim()}:</span>{" "}
-                                <span>{description}</span>
+                                <span
+                                  dangerouslySetInnerHTML={{
+                                    __html: formatExplainText(
+                                      description.endsWith(".") ? description : description + "."
+                                    ),
+                                  }}
+                                />
                               </li>
                             );
                           })}
@@ -372,16 +397,73 @@ const ApplicationAssistant = ({
 
                     <div>
                       <h4 className="font-medium mb-2">What Makes This Grant Unique</h4>
-                      <p className="text-sm text-muted-foreground whitespace-pre-line">
-                        {(grantUniqueFactor || "Loading...").replace(/\[\d+\]/g, "")}
-                      </p>
+                      <p className="text-sm text-muted-foreground whitespace-pre-line"
+                        dangerouslySetInnerHTML={{ __html: formatExplainText(grantUniqueFactor || "Loading...") }} />
+
                     </div>
                   </div>
                 </CardContent>
-                <CardFooter>
-                  <Button variant="outline" className="w-full">
-                    Ask a specific question
-                  </Button>
+                <CardFooter className="flex flex-col space-y-3">
+                  {chatHistory.map((entry, idx) => (
+                    <div key={idx} className="space-y-2 w-full">
+                      <div className="max-w-[80%] bg-blue-100 text-blue-900 rounded-lg px-4 py-2 self-end ml-auto">
+                        <p className="text-sm font-medium">You:</p>
+                        <p className="text-sm">{entry.question}</p>
+                      </div>
+                      <div className="bg-muted p-3 rounded-md text-sm space-y-2">
+                        <p className="font-medium text-primary">Sonar Response:</p>
+                        <p dangerouslySetInnerHTML={{ __html: formatExplainText(entry.answer) }} />
+                      </div>
+                    </div>
+                  ))}
+                  {showChatInput ? (
+                    <div className="w-full space-y-2">
+                      <Textarea
+                        value={userQuestion}
+                        onChange={(e) => setUserQuestion(e.target.value)}
+                        placeholder="Ask something specific about this grant..."
+                      />
+                      <Button
+                        disabled={isAsking || !userQuestion.trim()}
+                        onClick={async () => {
+                          setIsAsking(true);
+                          try {
+                            const response = await fetch("http://localhost:5000/api/sonar", {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({
+                                question: `Grant: ${grantTitle}. ${grantUniqueFactor}. Question: ${userQuestion}`,
+                              }),
+                            });
+
+                            const data = await response.json();
+                            const newEntry = {
+                              question: userQuestion,
+                              answer: data.answer || "No response received.",
+                            };
+
+                            setChatHistory((prev) => {
+                              const updated = [...prev, newEntry];
+                              return updated.length > 5 ? updated.slice(-5) : updated;
+                            });
+
+                            setUserQuestion("");
+                          } catch (err) {
+                            console.error(err);
+                          } finally {
+                            setIsAsking(false);
+                            setShowChatInput(false);
+                          }
+                        }}
+                      >
+                        Submit Question
+                      </Button>
+                    </div>
+                  ) : (
+                    <Button variant="outline" className="w-full" onClick={() => setShowChatInput(true)}>
+                      Ask a specific question
+                    </Button>
+                  )}
                 </CardFooter>
               </Card>
             </TabsContent>

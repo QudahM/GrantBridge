@@ -61,6 +61,7 @@ const GrantCard = ({
   };
 
   const getDeadlineColor = () => {
+    if(isNaN(daysRemaining)) return "text-muted-foreground";
     if (daysRemaining <= 3) return "text-red-500";
     if (daysRemaining <= 7) return "text-amber-500";
     return "text-green-500";
@@ -97,7 +98,7 @@ const GrantCard = ({
                 className={`flex items-center gap-1 ${getDeadlineColor()}`}
               >
                 <Clock className="h-3 w-3" />
-                {daysRemaining} days left
+                {isNaN(daysRemaining) ? "Date not specified" : `${daysRemaining} days left`}
               </Badge>
             </div>
 
@@ -168,7 +169,7 @@ const GrantCard = ({
               <ul className="space-y-1">
                 {eligibilityHighlights.flatMap((highlight, i) =>
                   highlight
-                    .split(/[•*;,]| and /i)
+                    .split(/[•*;]| and /i)
                     .map((point, j) => (
                       point.trim() && (
                         <li key={`${i}-${j}`} className="text-sm flex items-start">
