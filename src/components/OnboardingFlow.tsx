@@ -36,7 +36,7 @@ const FormGroup = ({ children }: { children: React.ReactNode }) => (
   <div className="flex flex-col space-y-2">{children}</div>
 );
 
-const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete = () => {} }) => {
+const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete = () => { } }) => {
   const [step, setStep] = useState(1);
   const navigate = useNavigate();
   const [progress, setProgress] = useState(0);
@@ -155,8 +155,28 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete = () => {} }
                 </RadioGroup>
               </FormGroup>
               <FormGroup>
-                <Label>Residency/Citizenship</Label>
-                <Input value={userData.citizenship} onChange={(e) => updateUserData("citizenship", e.target.value)} placeholder="Ex: Canadian citizen, PR" />
+                <Label>Residency / Citizenship</Label>
+                <Select
+                  value={userData.citizenship}
+                  onValueChange={(value) => updateUserData("citizenship", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[
+                      "Citizenship",
+                      "Permanent Resident (PR)",
+                      "International Student",
+                      "Temporary Resident",
+                      "Work Permit Holder",
+                      "Refugee",
+                      "Other"
+                    ].map((status) => (
+                      <SelectItem key={status} value={status}>{status}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </FormGroup>
             </CardContent>
           </motion.div>
@@ -183,11 +203,36 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete = () => {} }
                 <>
                   <FormGroup>
                     <Label>Degree Type</Label>
-                    <Input value={userData.degreeType} onChange={(e) => updateUserData("degreeType", e.target.value)} placeholder="Ex: Bachelor's, Master's" />
+                    <Select
+                      value={userData.degreeType}
+                      onValueChange={(value) => updateUserData("degreeType", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select degree type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["Diploma", "Bachelor's", "Master's", "PhD", "Other"].map((type) => (
+                          <SelectItem key={type} value={type}>{type}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormGroup>
+
                   <FormGroup>
                     <Label>Year of Study</Label>
-                    <Input value={userData.yearOfStudy} onChange={(e) => updateUserData("yearOfStudy", e.target.value)} placeholder="Ex: 2nd year, Final year" />
+                    <Select
+                      value={userData.yearOfStudy}
+                      onValueChange={(value) => updateUserData("yearOfStudy", value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select year" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {["1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year", "Final Year"].map((year) => (
+                          <SelectItem key={year} value={year}>{year}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </FormGroup>
                 </>
               )}
@@ -206,7 +251,19 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete = () => {} }
               </FormGroup>
               <FormGroup>
                 <Label>Current GPA</Label>
-                <Input value={userData.gpa} onChange={(e) => updateUserData("gpa", e.target.value)} placeholder="Ex: 3.8 / 4.0" />
+                <Select
+                  value={userData.gpa}
+                  onValueChange={(value) => updateUserData("gpa", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select GPA (4.0 scale)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 21 }, (_, i) => (i * 0.2).toFixed(1)).map((gpa) => (
+                      <SelectItem key={gpa} value={gpa}>{gpa}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </FormGroup>
             </CardContent>
           </motion.div>
@@ -219,7 +276,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete = () => {} }
             <CardContent className="space-y-6">
               <FormGroup>
                 <Label>Household Income</Label>
-                <Select value={userData.incomeBracket} onValueChange={(value) => {updateUserData("incomeBracket", value);updateUserData("financialNeed", value === "Under-25k");}}>
+                <Select value={userData.incomeBracket} onValueChange={(value) => { updateUserData("incomeBracket", value); updateUserData("financialNeed", value === "Under-25k"); }}>
                   <SelectTrigger><SelectValue placeholder="Select income" /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Under-25k">Under $25,000</SelectItem>
@@ -232,7 +289,30 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete = () => {} }
               </FormGroup>
               <FormGroup>
                 <Label>Ethnicity</Label>
-                <Input value={userData.ethnicity} onChange={(e) => updateUserData("ethnicity", e.target.value)} placeholder="Ex: South Asian, Hispanic, Black" />
+                <Select
+                  value={userData.ethnicity}
+                  onValueChange={(value) => updateUserData("ethnicity", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select your ethnicity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {[
+                      "African",
+                      "South Asian",
+                      "East Asian",
+                      "Hispanic",
+                      "Indigenous",
+                      "Middle Eastern",
+                      "Caucasian",
+                      "Multiracial",
+                      "Other",
+                      "Prefer not to say",
+                    ].map((ethnicity) => (
+                      <SelectItem key={ethnicity} value={ethnicity}>{ethnicity}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </FormGroup>
             </CardContent>
           </motion.div>

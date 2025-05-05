@@ -205,7 +205,7 @@ const GrantCard = ({
               <ul className="space-y-1">
                 {requirements.flatMap((req, i) => {
                   // First, clean up the text: remove newlines and normalize semicolons
-                  const cleaned = req.label.replace(/\n/g, " ").replace(/\s*[,;]\s*/g, "; ");
+                  const cleaned = req.label.replace(/\n/g, " ").replace(/\s*[,-;]\s*/g, "; ");
 
                   // Now split ONLY on semicolons — this avoids breaking numeric ranges like "500-1000"
                   return cleaned.split(";").map((item, j) => {

@@ -70,7 +70,7 @@ const ApplicationAssistant = ({
   const [isAsking, setIsAsking] = useState(false);
   const [showChatInput, setShowChatInput] = useState(false);
   const [chatHistory, setChatHistory] = useState<{ question: string; answer: string }[]>([]);
-  const [showAllChats, setShowAllChats] = useState(false);
+  const [isLoadingDescriptions, setIsLoadingDescriptions] = useState(false);
 
   const getStableRequirementsKey = (reqs: string[]) =>
     reqs.map(r => r.trim().toLowerCase()).sort().join("||");
@@ -100,9 +100,10 @@ const ApplicationAssistant = ({
 
   React.useEffect(() => {
     const reqKey = `${grantTitle?.trim().toLowerCase()}::${getStableRequirementsKey(grantRequirements)}`;
-    if (reqKey === lastFetchedRequirements) return; // Avoid unnecessary fetches
+    if (reqKey === lastFetchedRequirements) return;
 
     const fetchDescriptions = async () => {
+      setIsLoadingDescriptions(true);
       try {
         const res = await fetch("http://localhost:5000/api/requirement-descriptions", {
           method: "POST",
@@ -112,9 +113,12 @@ const ApplicationAssistant = ({
 
         const data = await res.json();
         setRequirementDescriptions(data.descriptions || []);
-        setLastFetchedRequirements(reqKey); // Update last fetched requirements
+        setLastFetchedRequirements(reqKey);
       } catch (err) {
         console.error("Failed to load requirement descriptions", err);
+        setRequirementDescriptions(grantRequirements.map(() => "Description not available"));
+      } finally {
+        setIsLoadingDescriptions(false);
       }
     };
 
@@ -269,10 +273,14 @@ const ApplicationAssistant = ({
                             })()}
                           </label>
                           <p className="text-sm text-foreground">
-                            {(() => {
-                              const desc = requirementDescriptions[index]?.replace(/\[\d+\]/g, "") || "Description not available";
-                              return desc.trim().endsWith(".") ? desc.trim() : desc.trim() + ".";
-                            })()}
+                            {isLoadingDescriptions
+                              ? "Loading..."
+                              : (() => {
+                                const desc = requirementDescriptions[index];
+                                if (!desc) return "";
+                                const cleaned = desc.replace(/\[\d+\]/g, "").trim();
+                                return cleaned.endsWith(".") ? cleaned : cleaned + ".";
+                              })()}
                           </p>
                         </div>
                       </div>

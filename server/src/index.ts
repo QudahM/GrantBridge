@@ -49,7 +49,7 @@ app.post('/api/grants', async (req, res): Promise<any> => {
     }
 
     const dynamicQuery = `
-      List as many recent scholarships or grants (from the last and next 3 years) as possible for:
+      List as many recent and upcoming scholarships or grants (from the current and next few years) as possible for:
       * a ${age}-year-old
       * ${identifiers.join(", ")} ${gender}
       * studying ${education} (${degreeType}) in ${country}
