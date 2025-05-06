@@ -10,7 +10,7 @@
 
 ## Live Demo
 
-Check it out here: [grantbridge.vercel.app](https://navajowhite-wildcat-999577.hostingersite.com)
+Check it out here: [GrantBridge](https://navajowhite-wildcat-999577.hostingersite.com)
 
 ---
 
