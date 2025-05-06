@@ -1,30 +1,30 @@
-# 🧩 GrantBridge
+# GrantBridge
 
 **GrantBridge** is a smart web application that helps users discover, understand, and apply to scholarships and grants. It uses the Perplexity Sonar API to break down eligibility, track progress, and generate personalized application drafts.
 
 ---
 
-## 🖼️ Screenshots
+## Screenshots
 
 ![Home Page](./public/screenshots/Grantbridge_mainpage.png)
 
-## 🌐 Live Demo
+## Live Demo
 
-Check it out here: [grantbridge.vercel.app](https://grantbridge.vercel.app)
-
----
-
-## ✨ Features
-
-- 🔍 **Grant Discovery** – AI-powered search to find relevant scholarships based on your profile.
-- 📋 **Application Assistant** – Understand eligibility criteria and get simplified requirement breakdowns.
-- ✅ **Checklist Tracker** – Mark off completed requirements as you go.
-- 🧠 **Smart Suggestions** – Get phrase suggestions and application draft support.
-- 💾 **Saved Grants** – Bookmark opportunities for later.
+Check it out here: [grantbridge.vercel.app](https://navajowhite-wildcat-999577.hostingersite.com)
 
 ---
 
-## 🧠 Tech Stack
+## Features
+
+- **Grant Discovery** – AI-powered search to find relevant scholarships based on your profile.
+- **Application Assistant** – Understand eligibility criteria and get simplified requirement breakdowns.
+- **Checklist Tracker** – Mark off completed requirements as you go.
+- **Smart Suggestions** – Get phrase suggestions and application draft support.
+- **Saved Grants** – Bookmark opportunities for later.
+
+---
+
+## Tech Stack
 
 **Frontend:**  
 React • TypeScript • TailwindCSS • Framer Motion • shadcn/ui
@@ -34,14 +34,14 @@ Node.js • Express • Perplexity Sonar API
 
 ---
 
-## 🚀 Getting Started
+## Getting Started
 
-### 📦 Prerequisites
+### Prerequisites
 
 - Node.js (v18+ recommended)
 - pnpm or npm
 
-### 🔧 Installation
+### Installation
 
 ```bash
 # Clone the repository
@@ -55,7 +55,7 @@ pnpm install
 pnpm dev
 ```
 
-### ⚙️ Environment Setup
+### Environment Setup
 
 1. Create a `.env` file in the root of the project:
 
@@ -72,12 +72,12 @@ pnpm dev
 
 ---
 
-## 📬 Contact
+## Contact
 
 Created by [@qudahm](https://github.com/qudahm) – feel free to reach out!
 
 ---
 
-## 🧾 License
+## License
 
 - This project is open source under the MIT License.

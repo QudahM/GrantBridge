@@ -16,6 +16,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const calculateMatchPercentage = (userProfile: UserProfile, grant: Grant) => {
   let baseScore = 50;
 
@@ -66,7 +68,7 @@ const GrantDashboard = () => {
   useEffect(() => {
     const fetchGrants = async () => {
       try {
-        const response = await fetch("http://localhost:5000/api/grants", {
+        const response = await fetch(`${BASE_URL}/api/grants`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(userProfile),

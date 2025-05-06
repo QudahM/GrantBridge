@@ -41,6 +41,8 @@ interface ApplicationAssistantProps {
   grantLink?: string;
 }
 
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
+
 const ApplicationAssistant = ({
   isOpen = true,
   onClose = () => { },
@@ -80,7 +82,7 @@ const ApplicationAssistant = ({
 
     const fetchGrantExplanation = async () => {
       try {
-        const res = await fetch("http://localhost:5000/api/explain-grant", {
+        const res = await fetch(`${BASE_URL}/api/explain-grant`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ title: grantTitle, requirements: grantRequirements }),
@@ -105,7 +107,7 @@ const ApplicationAssistant = ({
     const fetchDescriptions = async () => {
       setIsLoadingDescriptions(true);
       try {
-        const res = await fetch("http://localhost:5000/api/requirement-descriptions", {
+        const res = await fetch(`${BASE_URL}/api/requirement-descriptions`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ requirements: grantRequirements }),
@@ -139,7 +141,7 @@ const ApplicationAssistant = ({
     const query = `Based on the following grant requirements, help me draft an application: ${grantRequirements.join("; ")}`;
 
     try {
-      const response = await fetch("http://localhost:5000/api/sonar", {
+      const response = await fetch(`${BASE_URL}/api/sonar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ question: query })
@@ -436,7 +438,7 @@ const ApplicationAssistant = ({
                         onClick={async () => {
                           setIsAsking(true);
                           try {
-                            const response = await fetch("http://localhost:5000/api/sonar", {
+                            const response = await fetch(`${BASE_URL}/api/sonar`, {
                               method: "POST",
                               headers: { "Content-Type": "application/json" },
                               body: JSON.stringify({
