@@ -6,7 +6,7 @@ import { Link } from "react-router-dom";
 
 const Home = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-blue-50 flex flex-col items-center justify-center p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 text-white flex flex-col items-center justify-center p-4 md:p-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -23,7 +23,7 @@ const Home = () => {
         </motion.h1>
 
         <motion.p
-          className="text-xl text-gray-600 max-w-2xl mx-auto"
+          className="text-xl text-gray-400 max-w-2xl mx-auto"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.8 }}
@@ -40,7 +40,7 @@ const Home = () => {
           <Link to="/onboarding">
             <Button
               size="lg"
-              className="text-lg px-8 py-6 rounded-xl bg-blue-600 hover:bg-blue-700 transition-all duration-300 shadow-lg hover:shadow-xl"
+              className="text-lg px-8 py-6 rounded-xl bg-indigo-500 hover:bg-blue-600 transition-all duration-300 shadow-lg hover:shadow-xl"
             >
               Start your profile
             </Button>
@@ -75,7 +75,7 @@ const Home = () => {
       </motion.div>
 
       <motion.div
-        className="mt-16 text-center text-gray-500"
+        className="mt-16 text-center text-gray-300"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 1.6, duration: 0.8 }}
@@ -103,11 +103,11 @@ const FeatureCard = ({ icon, title, description, delay }: FeatureCardProps) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, duration: 0.5 }}
     >
-      <Card className="h-full bg-white border-none shadow-md hover:shadow-lg transition-shadow duration-300">
+      <Card className="h-full bg-slate-800 text-white border border-slate-700 shadow-md hover:shadow-lg transition-shadow duration-300">
         <CardContent className="p-6 flex flex-col items-center text-center">
           <div className="text-4xl mb-4">{icon}</div>
           <h3 className="text-xl font-semibold mb-2">{title}</h3>
-          <p className="text-gray-600">{description}</p>
+          <p className="text-gray-300">{description}</p>
         </CardContent>
       </Card>
     </motion.div>

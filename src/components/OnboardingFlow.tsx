@@ -148,7 +148,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete = () => { } 
                 <RadioGroup value={userData.genderIdentity} onValueChange={(value) => updateUserData("genderIdentity", value)} className="grid grid-cols-2 gap-2">
                   {['Woman', 'Man', 'Non-binary', 'Prefer not to say'].map((g) => (
                     <div key={g} className="flex items-center space-x-2">
-                      <RadioGroupItem value={g} id={g} />
+                      <RadioGroupItem value={g} id={g} className="border-2 border-white data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-400 flex items-center justify-center" />
                       <Label htmlFor={g}>{g.replace('-', ' ')}</Label>
                     </div>
                   ))}
@@ -259,7 +259,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete = () => { } 
                     <SelectValue placeholder="Select GPA (4.0 scale)" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.from({ length: 21 }, (_, i) => (i * 0.2).toFixed(1)).map((gpa) => (
+                    {Array.from({ length: 21 }, (_, i) => (i * 0.2).toFixed(1)).reverse().map((gpa) => (
                       <SelectItem key={gpa} value={gpa}>{gpa}</SelectItem>
                     ))}
                   </SelectContent>
@@ -328,7 +328,12 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete = () => { } 
                 <div className="grid grid-cols-2 gap-3 mt-3">
                   {["BIPOC", "LGBTQ+", "First Generation Student", "Low Income", "Newcomer/Immigrant", "Person with Disability", "Indigenous", "Veteran"].map((id) => (
                     <div key={id} className="flex items-center space-x-2">
-                      <Checkbox id={id} checked={userData.identifiers.includes(id)} onCheckedChange={() => toggleArrayItem(id)} />
+                      <Checkbox 
+                        id={id} 
+                        checked={userData.identifiers.includes(id)} 
+                        onCheckedChange={() => toggleArrayItem(id)} 
+                        className="border-2 border-white data-[state=checked]:bg-indigo-600 data-[state=checked]:border-indigo-400 data-[state=checked]:text-white flex items-center justify-center"
+                      />
                       <Label htmlFor={id}>{id}</Label>
                     </div>
                   ))}
@@ -344,25 +349,27 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete = () => { } 
   };
 
   return (
-    <div className="w-full max-w-4xl mx-auto bg-background">
-      <div className="mb-8">
-        <Progress value={progress} className="h-2" />
-        <div className="flex justify-between mt-2 text-sm text-muted-foreground">
-          <span>Step {step} of {totalSteps}</span>
-          <span>{Math.round(progress)}% Complete</span>
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 text-white p-4 md:p-8 flex flex-col items-center">
+      <div className="w-full max-w-4xl">
+        <div className="mb-8">
+          <Progress value={progress} className="h-2 bg-slate-700 [&>div]:bg-white" />
+          <div className="flex justify-between mt-2 text-sm text-muted-foreground">
+            <span>Step {step} of {totalSteps}</span>
+            <span>{Math.round(progress)}% Complete</span>
+          </div>
         </div>
+        <Card className="bg-slate-800 text-white border border-slate-700">
+          {renderStep()}
+          <CardFooter className="flex justify-between pt-6">
+            <Button variant="outline" onClick={handleBack} className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-violet-600 text-white hover:from-indigo-400 hover:to-violet-500 transition-colors duration-300 shadow-lg hover:shadow-xl">
+              <ChevronLeft className="h-4 w-4" /> Back
+            </Button>
+            <Button variant="outline" onClick={handleNext} className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-violet-600 text-white hover:from-indigo-400 hover:to-violet-500 transition-colors duration-300 shadow-lg hover:shadow-xl">
+              {step === totalSteps ? (<><Check className="h-4 w-4" /> Complete</>) : (<><ChevronRight className="h-4 w-4" /> Next</>)}
+            </Button>
+          </CardFooter>
+        </Card>
       </div>
-      <Card>
-        {renderStep()}
-        <CardFooter className="flex justify-between pt-6">
-          <Button variant="outline" onClick={handleBack} className="flex items-center gap-2">
-            <ChevronLeft className="h-4 w-4" /> Back
-          </Button>
-          <Button onClick={handleNext} className="flex items-center gap-2">
-            {step === totalSteps ? (<><Check className="h-4 w-4" /> Complete</>) : (<><ChevronRight className="h-4 w-4" /> Next</>)}
-          </Button>
-        </CardFooter>
-      </Card>
     </div>
   );
 };
