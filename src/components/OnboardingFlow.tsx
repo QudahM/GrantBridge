@@ -121,7 +121,14 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete = () => { } 
             <CardContent className="space-y-6">
               <FormGroup>
                 <Label>Age</Label>
-                <Input type="number" value={userData.age} onChange={(e) => updateUserData("age", e.target.value)} />
+                <Select value={userData.age} onValueChange={(value) => updateUserData("age", value)}>
+                  <SelectTrigger><SelectValue placeholder="Select your age" /></SelectTrigger>
+                  <SelectContent>
+                    {Array.from({ length: 100 }, (_, i) => i + 1).map((age) => (
+                      <SelectItem key={age} value={String(age)}>{age}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </FormGroup>
               <FormGroup>
                 <Label>Country of Residence</Label>
@@ -352,8 +359,8 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete = () => { } 
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 text-white p-4 md:p-8 flex flex-col items-center">
       <div className="w-full max-w-4xl">
         <div className="mb-8">
-          <Progress value={progress} className="h-2 bg-slate-700 [&>div]:bg-white" />
-          <div className="flex justify-between mt-2 text-sm text-muted-foreground">
+          <Progress value={progress} className="h-2 bg-blue-800 [&>div]:bg-white" />
+          <div className="flex justify-between mt-2 text-sm text-muted-foreground text-white">
             <span>Step {step} of {totalSteps}</span>
             <span>{Math.round(progress)}% Complete</span>
           </div>

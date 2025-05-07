@@ -14,7 +14,7 @@ const Home = () => {
         className="max-w-4xl w-full text-center space-y-8"
       >
         <motion.h1
-          className="text-4xl md:text-6xl font-bold text-gray-900"
+          className="text-4xl md:text-6xl font-bold text-gray-100"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.8 }}
@@ -23,7 +23,7 @@ const Home = () => {
         </motion.h1>
 
         <motion.p
-          className="text-xl text-gray-400 max-w-2xl mx-auto"
+          className="text-xl text-gray-300 max-w-2xl mx-auto"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.8 }}
