@@ -6,11 +6,12 @@
 
 ## Screenshots
 
-![Home Page](./public/screenshots/Grantbridge_mainpage.png)
+![Home Page](./public/screenshots/Grantbridge_homepage.png)
+![Dashboard Page](./public/screenshots/Grantbridge_mainpage.png)
 
 ## Live Demo
 
-Check it out here: [GrantBridge](https://navajowhite-wildcat-999577.hostingersite.com)
+Check it out here: [GrantBridge](https://grantbridge.online)
 
 ---
 
