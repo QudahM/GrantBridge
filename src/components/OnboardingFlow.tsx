@@ -37,9 +37,10 @@ const FormGroup = ({ children }: { children: React.ReactNode }) => (
 );
 
 const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete = () => { } }) => {
-  const [step, setStep] = useState(1);
   const navigate = useNavigate();
-  const [progress, setProgress] = useState(0);
+  const totalSteps = 6;
+  const [step, setStep] = useState(1);
+  const [progress, setProgress] = useState((1 / totalSteps) * 100);
   const [userData, setUserData] = useState<UserData>({
     age: "",
     country: "",
@@ -55,8 +56,6 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({ onComplete = () => { } 
     ethnicity: "",
     identifiers: [],
   });
-
-  const totalSteps = 6;
 
   const handleNext = () => {
     if (step < totalSteps) {
