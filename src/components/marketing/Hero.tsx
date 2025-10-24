@@ -73,7 +73,7 @@ export const Hero = () => {
               })}
           className="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4"
         >
-          <Link to="/onboarding">
+          <Link to="/login">
             <Button
               size="lg"
               className="px-6 py-5 text-lg bg-indigo-600 hover:bg-indigo-700 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition-all duration-200 shadow-lg hover:shadow-xl backdrop-blur-sm"

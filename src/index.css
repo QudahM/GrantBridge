@@ -89,3 +89,14 @@
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background-color: hsl(var(--foreground));
   }
+
+  /* Turnstile widget styling */
+  .turnstile-widget {
+    border-radius: 0.5rem;
+    overflow: hidden;
+  }
+
+  /* Ensure Turnstile widget fits well in dark theme */
+  .cf-turnstile {
+    border-radius: 0.5rem !important;
+  }
