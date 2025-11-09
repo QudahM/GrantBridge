@@ -13,10 +13,10 @@ export const SiteFooter = () => {
 
           <nav className="flex space-x-6" aria-label="Footer navigation">
             <Link
-              to="/privacy"
+              to="/faq"
               className="text-slate-400 hover:text-slate-200 text-sm transition-colors duration-200 focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 rounded"
             >
-              Privacy
+              FAQ
             </Link>
             <Link
               to="/terms"

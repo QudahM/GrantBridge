@@ -1,21 +1,38 @@
-import { Hero, Features, Steps, CtaBanner, SiteFooter } from "./marketing";
+import { motion } from "framer-motion";
+import { Hero } from "./marketing/Hero";
+import { FeaturedGrants } from "./marketing/FeaturedGrants";
+import { Steps } from "./marketing/Steps";
+import { CtaBanner, SiteFooter } from "./marketing";
+import { UserNav } from "./ui/UserNav";
 
 const Home = () => {
   return (
-    <div className="min-h-screen text-white">
+    <div className="min-h-screen text-white bg-slate-900">
+      {/* User Navigation - Top Right */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.5 }}
+        className="fixed top-6 right-6 z-50"
+      >
+        <UserNav />
+      </motion.div>
+
       <main>
+        {/* Hero Section with Search */}
         <Hero />
-        <div className="bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 relative">
-          {/* Subtle radial overlay for other sections */}
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(99,102,241,0.1)_0%,transparent_50%)] opacity-40 pointer-events-none" />
-          <div className="relative z-10">
-            <Features />
-            <Steps />
-            <CtaBanner />
-          </div>
-        </div>
+
+        {/* Featured Grants Section */}
+        <FeaturedGrants />
+
+        {/* How It Works Section */}
+        <Steps />
+
+        {/* Final CTA */}
+        <CtaBanner />
       </main>
 
+      {/* Footer */}
       <SiteFooter />
     </div>
   );

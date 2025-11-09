@@ -37,7 +37,6 @@ export const CtaBanner = () => {
               Start your funding journey
             </Button>
           </Link>
-
         </div>
       </motion.div>
     </section>

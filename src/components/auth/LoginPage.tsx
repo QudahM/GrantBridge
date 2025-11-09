@@ -125,7 +125,7 @@ export const LoginPage = () => {
   // Reset Turnstile widget by changing key
   const resetTurnstile = () => {
     setCaptchaToken(null);
-    setTurnstileKey(prev => prev + 1);
+    setTurnstileKey((prev) => prev + 1);
   };
 
   // Clear form state when switching between sign up and sign in
@@ -192,8 +192,8 @@ export const LoginPage = () => {
         }
 
         const { error } = await signUp(
-          email, 
-          password, 
+          email,
+          password,
           {
             first_name: firstName,
             last_name: lastName,
@@ -214,7 +214,11 @@ export const LoginPage = () => {
           resetTurnstile();
         }
       } else {
-        const { error } = await signIn(email, password, captchaToken || undefined);
+        const { error } = await signIn(
+          email,
+          password,
+          captchaToken || undefined
+        );
         if (error) {
           setError(error.message);
           // Reset Turnstile on error

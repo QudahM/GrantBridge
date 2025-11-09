@@ -100,3 +100,22 @@
   .cf-turnstile {
     border-radius: 0.5rem !important;
   }
+
+  /* Smooth scrolling for the entire page */
+  html {
+    scroll-behavior: smooth;
+  }
+
+  /* Custom gradient utilities */
+  .bg-gradient-radial {
+    background: radial-gradient(ellipse at center, var(--tw-gradient-stops));
+  }
+
+  /* Immersive scroll effects */
+  .parallax-slow {
+    transform: translateY(calc(var(--scroll) * 0.5px));
+  }
+
+  .parallax-fast {
+    transform: translateY(calc(var(--scroll) * -0.3px));
+  }

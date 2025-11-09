@@ -16,6 +16,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import DarkModeToggle from "@/components/ui/DarkModeToggle";
+import { UserNav } from "@/components/ui/UserNav";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
 
@@ -229,6 +230,7 @@ const GrantDashboard = () => {
             <p className="text-muted-foreground mt-2">{userSummary}</p>
           </div>
           <div className="flex items-center gap-2 w-full md:w-auto">
+            <UserNav />
             <DarkModeToggle />
             <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
