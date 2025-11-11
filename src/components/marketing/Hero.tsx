@@ -36,7 +36,7 @@ export const Hero = () => {
 
   const stats = [
     { icon: <DollarSign size={20} />, value: "$5M+", label: "In Grants Found" },
-    { icon: <Users size={20} />, value: "1K+", label: "Students Funded" },
+    { icon: <Users size={20} />, value: "1K+", label: "Students Assisted" },
     { icon: <TrendingUp size={20} />, value: "95%", label: "Match Accuracy" },
   ];
 

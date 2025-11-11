@@ -229,9 +229,7 @@ const GrantDashboard = () => {
             <h1 className="text-3xl font-bold text-foreground">Your Grant Dashboard</h1>
             <p className="text-muted-foreground mt-2">{userSummary}</p>
           </div>
-          <div className="flex items-center gap-2 w-full md:w-auto">
-            <UserNav />
-            <DarkModeToggle />
+          <div className="flex items-center gap-3 w-full md:w-auto">
             <div className="relative w-full md:w-64">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
@@ -262,6 +260,9 @@ const GrantDashboard = () => {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+            <div className="hidden md:block w-px h-8 bg-border" />
+            <DarkModeToggle />
+            <UserNav />
           </div>
         </div>
 
