@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { fetchUserProfile, upsertUserProfile, UserProfileData } from "../lib/profile";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -26,34 +27,17 @@ import {
   Calendar,
   Award,
   BookOpen,
-  DollarSign,
   CheckCircle,
   AlertCircle,
+  Loader2,
 } from "lucide-react";
-
-interface UserProfileData {
-  firstName?: string;
-  lastName?: string;
-  email?: string;
-  age?: string;
-  country?: string;
-  genderIdentity?: string;
-  citizenship?: string;
-  schoolStatus?: string;
-  degreeType?: string;
-  yearOfStudy?: string;
-  fieldOfStudy?: string;
-  gpa?: string;
-  incomeBracket?: string;
-  ethnicity?: string;
-  identifiers?: string[];
-}
 
 export const UserProfile = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [success, setSuccess] = useState("");
   const [error, setError] = useState("");
   
@@ -77,11 +61,114 @@ export const UserProfile = () => {
 
   const [editedData, setEditedData] = useState<UserProfileData>(profileData);
 
+  // Redirect if not authenticated
   useEffect(() => {
     if (!user) {
       navigate("/login");
     }
   }, [user, navigate]);
+
+  // Load user profile from Supabase on mount
+  useEffect(() => {
+    const loadProfile = async () => {
+      if (!user?.id) return;
+
+      setInitialLoading(true);
+      try {
+        console.log('Loading profile for user:', user.id);
+        const profile = await fetchUserProfile(user.id);
+        console.log('Fetched profile:', profile);
+        
+        if (profile) {
+          // Merge with auth metadata, prioritizing database data
+          const mergedProfile: UserProfileData = {
+            firstName: profile.firstName || user.user_metadata?.first_name || "",
+            lastName: profile.lastName || user.user_metadata?.last_name || "",
+            email: user.email || profile.email || "",
+            age: profile.age || "",
+            country: profile.country || "",
+            genderIdentity: profile.genderIdentity || "",
+            citizenship: profile.citizenship || "",
+            schoolStatus: profile.schoolStatus || "",
+            degreeType: profile.degreeType || "",
+            yearOfStudy: profile.yearOfStudy || "",
+            fieldOfStudy: profile.fieldOfStudy || "",
+            gpa: profile.gpa || "",
+            incomeBracket: profile.incomeBracket || "",
+            ethnicity: profile.ethnicity || "",
+            identifiers: profile.identifiers || [],
+            financialNeed: profile.financialNeed || false,
+          };
+          console.log('Merged profile:', mergedProfile);
+          setProfileData(mergedProfile);
+          setEditedData(mergedProfile);
+        } else {
+          // No profile exists yet, create initial profile with auth metadata
+          console.log('No profile found, creating initial profile');
+          const initialProfile: UserProfileData = {
+            firstName: user.user_metadata?.first_name || "",
+            lastName: user.user_metadata?.last_name || "",
+            email: user.email || "",
+            age: "",
+            country: "",
+            genderIdentity: "",
+            citizenship: "",
+            schoolStatus: "",
+            degreeType: "",
+            yearOfStudy: "",
+            fieldOfStudy: "",
+            gpa: "",
+            incomeBracket: "",
+            ethnicity: "",
+            identifiers: [],
+            financialNeed: false,
+          };
+          
+          // Auto-create profile in database
+          try {
+            const createdProfile = await upsertUserProfile(user.id, initialProfile);
+            console.log('Created initial profile:', createdProfile);
+            setProfileData(createdProfile);
+            setEditedData(createdProfile);
+          } catch (createError) {
+            console.error('Failed to create initial profile:', createError);
+            // Fall back to local state
+            setProfileData(initialProfile);
+            setEditedData(initialProfile);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading profile:', err);
+        setError('Failed to load profile data');
+        
+        // Fallback to auth metadata
+        const fallbackProfile: UserProfileData = {
+          firstName: user.user_metadata?.first_name || "",
+          lastName: user.user_metadata?.last_name || "",
+          email: user.email || "",
+          age: "",
+          country: "",
+          genderIdentity: "",
+          citizenship: "",
+          schoolStatus: "",
+          degreeType: "",
+          yearOfStudy: "",
+          fieldOfStudy: "",
+          gpa: "",
+          incomeBracket: "",
+          ethnicity: "",
+          identifiers: [],
+          financialNeed: false,
+        };
+        setProfileData(fallbackProfile);
+        setEditedData(fallbackProfile);
+      } finally {
+        setInitialLoading(false);
+      }
+    };
+
+    loadProfile();
+  }, [user]);
 
   const handleEdit = () => {
     setIsEditing(true);
@@ -97,20 +184,31 @@ export const UserProfile = () => {
   };
 
   const handleSave = async () => {
+    if (!user?.id) {
+      setError("User not authenticated");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setSuccess("");
 
     try {
-      // Here you would typically save to Supabase or your backend
-      // For now, we'll just update local state
-      setProfileData(editedData);
+      console.log('Saving profile data:', editedData);
+      
+      // Save to Supabase
+      const savedProfile = await upsertUserProfile(user.id, editedData);
+      console.log('Profile saved successfully:', savedProfile);
+      
+      // Update local state with saved data
+      setProfileData(savedProfile);
       setIsEditing(false);
       setSuccess("Profile updated successfully!");
       
       setTimeout(() => setSuccess(""), 3000);
     } catch (err) {
-      setError("Failed to update profile. Please try again.");
+      console.error('Error saving profile:', err);
+      setError(`Failed to update profile: ${err instanceof Error ? err.message : 'Unknown error'}`);
     } finally {
       setLoading(false);
     }
@@ -133,6 +231,18 @@ export const UserProfile = () => {
 
   if (!user) {
     return null;
+  }
+
+  // Show loading state while fetching profile
+  if (initialLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 text-white flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-indigo-500 mx-auto mb-4" />
+          <p className="text-slate-300">Loading your profile...</p>
+        </div>
+      </div>
+    );
   }
 
   return (

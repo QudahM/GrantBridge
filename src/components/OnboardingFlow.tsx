@@ -1,6 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useAuth } from "../contexts/AuthContext";
+import { upsertUserProfile, UserProfileData } from "../lib/profile";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -52,9 +54,11 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   onComplete = () => {},
 }) => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const totalSteps = 6;
   const [step, setStep] = useState(1);
   const [progress, setProgress] = useState((1 / totalSteps) * 100);
+  const [saving, setSaving] = useState(false);
   const [userData, setUserData] = useState<UserData>({
     age: "",
     country: "",
@@ -71,28 +75,89 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     identifiers: [],
   });
 
-  const handleNext = () => {
+  const handleNext = async () => {
     if (step < totalSteps) {
       setStep(step + 1);
       setProgress(((step + 1) / totalSteps) * 100);
     } else {
-      const finalUserProfile = {
-        age: Number(userData.age),
-        country: userData.country,
-        gender: userData.genderIdentity,
-        citizenship: userData.citizenship,
-        education: userData.schoolStatus,
-        degreeType: userData.degreeType,
-        yearOfStudy: userData.yearOfStudy,
-        fieldOfStudy: userData.fieldOfStudy,
-        gpa: userData.gpa,
-        incomeBracket: userData.incomeBracket,
-        financialNeed: userData.financialNeed,
-        ethnicity: userData.ethnicity,
-        identifiers: userData.identifiers,
-      };
-      onComplete(finalUserProfile);
-      navigate("/dashboard", { state: finalUserProfile });
+      setSaving(true);
+      
+      try {
+        // Prepare profile data in the correct format for UserProfileData
+        const finalUserProfile: UserProfileData = {
+          age: userData.age || undefined,
+          country: userData.country || undefined,
+          genderIdentity: userData.genderIdentity || undefined,
+          citizenship: userData.citizenship || undefined,
+          schoolStatus: userData.schoolStatus || undefined,
+          degreeType: userData.degreeType || undefined,
+          yearOfStudy: userData.yearOfStudy || undefined,
+          fieldOfStudy: userData.fieldOfStudy || undefined,
+          gpa: userData.gpa || undefined,
+          incomeBracket: userData.incomeBracket || undefined,
+          financialNeed: userData.financialNeed,
+          ethnicity: userData.ethnicity || undefined,
+          identifiers: userData.identifiers || [],
+          email: user?.email || undefined,
+          firstName: user?.user_metadata?.first_name || undefined,
+          lastName: user?.user_metadata?.last_name || undefined,
+        };
+
+        console.log('Saving profile data:', finalUserProfile);
+
+        // Save to Supabase if user is authenticated
+        if (user?.id) {
+          try {
+            const savedProfile = await upsertUserProfile(user.id, finalUserProfile);
+            console.log('Profile saved successfully:', savedProfile);
+          } catch (saveError) {
+            console.error('Failed to save profile to Supabase:', saveError);
+            // Continue with navigation even if save fails
+          }
+        }
+
+        // Call the onComplete callback with legacy format for backward compatibility
+        const legacyProfile = {
+          age: Number(userData.age),
+          country: userData.country,
+          gender: userData.genderIdentity,
+          citizenship: userData.citizenship,
+          education: userData.schoolStatus,
+          degreeType: userData.degreeType,
+          yearOfStudy: userData.yearOfStudy,
+          fieldOfStudy: userData.fieldOfStudy,
+          gpa: userData.gpa,
+          incomeBracket: userData.incomeBracket,
+          financialNeed: userData.financialNeed,
+          ethnicity: userData.ethnicity,
+          identifiers: userData.identifiers,
+        };
+        
+        onComplete(legacyProfile);
+        navigate("/dashboard", { state: legacyProfile });
+      } catch (error) {
+        console.error('Error saving profile:', error);
+        // Still navigate to dashboard even if save fails (for guest users)
+        const legacyProfile = {
+          age: Number(userData.age),
+          country: userData.country,
+          gender: userData.genderIdentity,
+          citizenship: userData.citizenship,
+          education: userData.schoolStatus,
+          degreeType: userData.degreeType,
+          yearOfStudy: userData.yearOfStudy,
+          fieldOfStudy: userData.fieldOfStudy,
+          gpa: userData.gpa,
+          incomeBracket: userData.incomeBracket,
+          financialNeed: userData.financialNeed,
+          ethnicity: userData.ethnicity,
+          identifiers: userData.identifiers,
+        };
+        onComplete(legacyProfile);
+        navigate("/dashboard", { state: legacyProfile });
+      } finally {
+        setSaving(false);
+      }
     }
   };
 
@@ -561,9 +626,20 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
             <Button
               variant="outline"
               onClick={handleNext}
-              className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-violet-600 text-white hover:from-indigo-400 hover:to-violet-500 transition-colors duration-300 shadow-lg hover:shadow-xl"
+              disabled={saving}
+              className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-violet-600 text-white hover:from-indigo-400 hover:to-violet-500 transition-colors duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {step === totalSteps ? (
+              {saving ? (
+                <>
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  >
+                    <Check className="h-4 w-4" />
+                  </motion.div>
+                  Saving...
+                </>
+              ) : step === totalSteps ? (
                 <>
                   <Check className="h-4 w-4" /> Complete
                 </>
