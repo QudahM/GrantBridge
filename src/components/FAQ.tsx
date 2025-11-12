@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Link } from "react-router-dom";
 import { ChevronDown, HelpCircle, Sparkles, Shield, Zap, Heart } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 
@@ -133,7 +134,7 @@ export const FAQ = () => {
   };
 
   return (
-    <section className="py-16 px-4 md:px-8 bg-slate-900/50 relative overflow-hidden">
+    <section className="py-16 px-4 md:px-8 relative overflow-hidden">
       {/* Background decoration */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,rgba(99,102,241,0.1)_0%,transparent_50%)] opacity-40 pointer-events-none" />
       
@@ -248,21 +249,30 @@ export const FAQ = () => {
           transition={{ duration: 0.6, delay: 0.3 }}
           className="mt-12 text-center"
         >
-          <Card className="bg-gradient-to-r from-indigo-600/20 to-purple-600/20 border-indigo-500/30 backdrop-blur-sm">
-            <CardContent className="p-8">
-              <h3 className="text-xl font-bold text-white mb-2">
+          <Card className="bg-slate-800/90 border-slate-600/50 backdrop-blur-xl shadow-2xl relative overflow-hidden">
+            {/* Subtle accent line */}
+            <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500" />
+            
+            <CardContent className="p-10 relative z-10">
+              <div className="flex items-center justify-center mb-4">
+                <div className="p-4 bg-gradient-to-br from-blue-500/20 to-indigo-500/20 rounded-2xl border border-blue-400/30">
+                  <HelpCircle size={32} className="text-blue-400" />
+                </div>
+              </div>
+              
+              <h3 className="text-2xl font-bold text-white mb-3">
                 Still have questions?
               </h3>
-              <p className="text-slate-300 mb-4">
+              <p className="text-slate-300 mb-6 text-base max-w-md mx-auto">
                 We're here to help! Reach out to our support team anytime.
               </p>
-              <a
-                href="mailto:support@grantbridge.com"
-                className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium transition-all duration-200 shadow-lg hover:shadow-xl"
+              <Link
+                to="/contact"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
               >
                 <HelpCircle size={18} />
                 Contact Support
-              </a>
+              </Link>
             </CardContent>
           </Card>
         </motion.div>

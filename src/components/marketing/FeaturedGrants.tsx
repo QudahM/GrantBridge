@@ -1,41 +1,65 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useNavigate } from "react-router-dom";
 import { useReducedMotion } from "./useReducedMotion";
-import { DollarSign, Calendar, Users, ArrowRight, TrendingUp } from "lucide-react";
+import { DollarSign, Calendar, Users, ArrowRight, Loader2 } from "lucide-react";
 
-const featuredGrants = [
-  {
-    title: "Fulbright Research Grant",
-    organization: "U.S. Department of State",
-    amount: "$30,000",
-    deadline: "October 15, 2025",
-    category: "Research",
-    eligibility: "Graduate Students",
-  },
-  {
-    title: "NSF Graduate Research Fellowship",
-    organization: "National Science Foundation",
-    amount: "$50,000",
-    deadline: "October 20, 2025",
-    category: "STEM",
-    eligibility: "Graduate Students",
-  },
-  {
-    title: "Gates Cambridge Scholarship",
-    organization: "Bill & Melinda Gates Foundation",
-    amount: "Full Tuition",
-    deadline: "December 5, 2024",
-    category: "International",
-    eligibility: "Graduate Students",
-  },
-];
+const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
+
+// Sample profile for fetching STEM grants for university students in USA/Canada
+const stemProfile = {
+  age: 20,
+  country: "United States",
+  gender: "Student",
+  citizenship: "Citizenship",
+  education: "Undergraduate",
+  degreeType: "Bachelor's",
+  yearOfStudy: "3rd Year",
+  fieldOfStudy: "Computer Science",
+  gpa: "3.5",
+  incomeBracket: "25k-50k",
+  financialNeed: true,
+  ethnicity: "Not specified",
+  identifiers: ["STEM"],
+};
 
 export const FeaturedGrants = () => {
   const prefersReducedMotion = useReducedMotion();
   const navigate = useNavigate();
+  const [featuredGrants, setFeaturedGrants] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Fetch real grants from backend
+  useEffect(() => {
+    const fetchFeaturedGrants = async () => {
+      try {
+        console.log('[FeaturedGrants] Fetching STEM grants from backend...');
+        const response = await fetch(`${BASE_URL}/api/grants`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(stemProfile),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          console.log('[FeaturedGrants] Received grants:', data.length);
+          // Take first 3 grants
+          setFeaturedGrants(data.slice(0, 3));
+        } else {
+          console.error('[FeaturedGrants] Failed to fetch grants');
+        }
+      } catch (error) {
+        console.error('[FeaturedGrants] Error fetching grants:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchFeaturedGrants();
+  }, []);
 
   const containerVariants = prefersReducedMotion
     ? { opacity: 1, y: 0 }
@@ -73,89 +97,110 @@ export const FeaturedGrants = () => {
           </p>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {featuredGrants.map((grant, index) => (
-            <motion.div
-              key={index}
-              {...(prefersReducedMotion ? {} : {
-                initial: { opacity: 0, y: 20 },
-                animate: { opacity: 1, y: 0 },
-                transition: { delay: 0.1 + index * 0.1, duration: 0.5, ease: "easeOut" }
-              })}
-            >
-              <Card className="h-full bg-slate-800/50 backdrop-blur-sm border-slate-700/50 hover:bg-slate-800/70 hover:border-indigo-500/30 transition-all duration-300 group">
-                <CardContent className="p-6 space-y-4">
-                  {/* Header */}
-                  <div className="flex items-start justify-between">
-                    <Badge className="bg-indigo-600/20 text-indigo-300 border-indigo-500/30">
-                      {grant.category}
-                    </Badge>
-                  </div>
-
-                  {/* Title */}
-                  <div>
-                    <h3 className="text-lg font-bold text-white mb-1 group-hover:text-indigo-400 transition-colors">
-                      {grant.title}
-                    </h3>
-                    <p className="text-sm text-slate-400">{grant.organization}</p>
-                  </div>
-
-                  {/* Details */}
-                  <div className="space-y-2 pt-2 border-t border-slate-700/50">
-                    <div className="flex items-center gap-2 text-sm">
-                      <DollarSign size={16} className="text-emerald-400" />
-                      <span className="text-white font-semibold">{grant.amount}</span>
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-indigo-500" />
+            <span className="ml-3 text-slate-300">Loading featured grants...</span>
+          </div>
+        ) : featuredGrants.length === 0 ? (
+          <div className="text-center py-20">
+            <p className="text-slate-400">No featured grants available at the moment.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {featuredGrants.map((grant, index) => (
+              <motion.div
+                key={grant.id || index}
+                {...(prefersReducedMotion ? {} : {
+                  initial: { opacity: 0, y: 20 },
+                  animate: { opacity: 1, y: 0 },
+                  transition: { delay: 0.1 + index * 0.1, duration: 0.5, ease: "easeOut" }
+                })}
+              >
+                <Card className="h-full bg-slate-800/50 backdrop-blur-sm border-slate-700/50 hover:bg-slate-800/70 hover:border-indigo-500/30 transition-all duration-300 group">
+                  <CardContent className="p-6 space-y-4">
+                    {/* Header */}
+                    <div className="flex items-start justify-between">
+                      <Badge className="bg-indigo-600/20 text-indigo-300 border-indigo-500/30">
+                        {grant.tags?.[0] || "Grant"}
+                      </Badge>
                     </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar size={16} className="text-indigo-400" />
-                      <span className="text-slate-300">{grant.deadline}</span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm">
-                      <Users size={16} className="text-purple-400" />
-                      <span className="text-slate-300">{grant.eligibility}</span>
-                    </div>
-                  </div>
 
-                  {/* CTA */}
-                  <Button
-                    onClick={() => navigate("/explore")}
-                    variant="outline"
+                    {/* Title */}
+                    <div>
+                      <h3 className="text-lg font-bold text-white mb-1 group-hover:text-indigo-400 transition-colors line-clamp-2">
+                        {grant.title}
+                      </h3>
+                      <p className="text-sm text-slate-400">{grant.organization}</p>
+                    </div>
+
+                    {/* Details */}
+                    <div className="space-y-2 pt-2 border-t border-slate-700/50">
+                      <div className="flex items-center gap-2 text-sm">
+                        <DollarSign size={16} className="text-emerald-400" />
+                        <span className="text-white font-semibold">
+                          {grant.amount?.toString().startsWith('$') ? grant.amount : `$${grant.amount}`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Calendar size={16} className="text-indigo-400" />
+                        <span className="text-slate-300">{grant.deadline}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Users size={16} className="text-purple-400" />
+                        <span className="text-slate-300 line-clamp-1">
+                          {grant.eligibility?.[0] || "See requirements"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* CTA */}
+                    <Button
+                      onClick={() => {
+                        if (grant.link) {
+                          window.open(grant.link, '_blank', 'noopener,noreferrer');
+                        }
+                      }}
+                      variant="outline"
                       className="w-full border border-slate-500/70 text-slate-100 
-             bg-slate-900/40 hover:bg-slate-800 hover:border-slate-400 
-             hover:text-white transition-all duration-200"
-                  >
-                    View Details
-                    <ArrowRight size={16} className="ml-2" />
-                  </Button>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </div>
+                                bg-slate-900/40 hover:bg-slate-800 hover:border-slate-400 
+                                hover:text-white transition-all duration-200"
+                    >
+                      View Details
+                      <ArrowRight size={16} className="ml-2" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
+        )}
 
         {/* View All CTA */}
-        <motion.div
-          {...(prefersReducedMotion ? {} : {
-            initial: { opacity: 0, y: 20 },
-            animate: { opacity: 1, y: 0 },
-            transition: { delay: 0.5, duration: 0.5 }
-          })}
-          className="text-center mt-12"
-        >
-          <Button
-            onClick={() => navigate("/explore")}
-            size="lg"
-            variant="outline"
-            className="px-8 py-6 text-base 
-                      border border-white/15 text-slate-100 
-                      bg-white/5 backdrop-blur-sm 
-                      hover:bg-white/10 hover:border-white/20 
-                      hover:text-white transition-all duration-200"
+        {!loading && featuredGrants.length > 0 && (
+          <motion.div
+            {...(prefersReducedMotion ? {} : {
+              initial: { opacity: 0, y: 20 },
+              animate: { opacity: 1, y: 0 },
+              transition: { delay: 0.5, duration: 0.5 }
+            })}
+            className="text-center mt-12"
           >
-            View All Grants
-            <ArrowRight size={18} className="ml-2 text-slate-300 group-hover:text-white transition-colors" />
-          </Button>
-        </motion.div>
+            <Button
+              onClick={() => navigate("/dashboard", { state: stemProfile })}
+              size="lg"
+              variant="outline"
+              className="px-8 py-6 text-base 
+                        border border-white/15 text-slate-100 
+                        bg-white/5 backdrop-blur-sm 
+                        hover:bg-white/10 hover:border-white/20 
+                        hover:text-white transition-all duration-200"
+            >
+              View All Grants
+              <ArrowRight size={18} className="ml-2 text-slate-300 group-hover:text-white transition-colors" />
+            </Button>
+          </motion.div>
+        )}
       </motion.div>
     </section>
   );

@@ -7,6 +7,8 @@ import OnboardingFlow from "./components/OnboardingFlow";
 import GrantDashboard from "./components/GrantDashboard";
 import { UserProfile } from "./components/UserProfile";
 import { FAQPage } from "./components/FAQPage";
+import { TermsPage } from "./components/TermsPage";
+import { ContactPage } from "./components/ContactPage";
 
 function App() {
   return (
@@ -41,6 +43,8 @@ function App() {
             } 
           />
           <Route path="/faq" element={<FAQPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/contact" element={<ContactPage />} />
         </Routes>
       </Suspense>
     </AuthProvider>
