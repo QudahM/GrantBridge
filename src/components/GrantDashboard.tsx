@@ -61,7 +61,9 @@ const GrantDashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(location.state as UserProfile);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(
+    location.state as UserProfile
+  );
   const [grants, setGrants] = useState<Grant[]>([]);
   const [selectedGrant, setSelectedGrant] = useState<Grant | null>(null);
   const [showAssistant, setShowAssistant] = useState(false);
@@ -75,42 +77,45 @@ const GrantDashboard = () => {
   // Load user profile if not provided via location.state
   useEffect(() => {
     const loadProfile = async () => {
-      console.log('[Dashboard] Checking profile availability');
-      
+      console.log("[Dashboard] Checking profile availability");
+
       // If profile already provided via location.state, skip fetch
       if (location.state) {
-        console.log('[Dashboard] Using profile from location.state');
+        console.log("[Dashboard] Using profile from location.state");
         setProfileLoading(false);
         return;
       }
 
       // Check if user is logged in
       if (!user) {
-        console.log('[Dashboard] No user logged in → redirect to /login');
-        navigate('/login');
+        console.log("[Dashboard] No user logged in → redirect to /login");
+        navigate("/login");
         return;
       }
 
       // Fetch profile from Supabase
       try {
-        console.log('[Dashboard] Fetching profile from Supabase for user:', user.id);
+        console.log(
+          "[Dashboard] Fetching profile from Supabase for user:",
+          user.id
+        );
         setProfileLoading(true);
         const profile = await fetchUserProfile(user.id);
-        
+
         if (!profile) {
-          console.log('[Dashboard] No profile found → redirect to /onboarding');
-          navigate('/onboarding');
+          console.log("[Dashboard] No profile found → redirect to /onboarding");
+          navigate("/onboarding");
           return;
         }
 
-        console.log('[Dashboard] Profile loaded, converting to legacy format');
+        console.log("[Dashboard] Profile loaded, converting to legacy format");
         const legacyProfile = toLegacyProfile(profile);
         setUserProfile(legacyProfile);
         setProfileLoading(false);
       } catch (error) {
-        console.error('[Dashboard] Error fetching profile:', error);
-        console.log('[Dashboard] Fallback → redirect to /onboarding');
-        navigate('/onboarding');
+        console.error("[Dashboard] Error fetching profile:", error);
+        console.log("[Dashboard] Fallback → redirect to /onboarding");
+        navigate("/onboarding");
       }
     };
 
@@ -124,7 +129,8 @@ const GrantDashboard = () => {
     }
 
     const fetchGrants = async () => {
-      console.log('[Dashboard] Fetching grants with profile:', userProfile);
+      console.log("[Dashboard] Fetching grants with profile:", userProfile);
+      console.log("[Dashboard] API URL:", BASE_URL);
       try {
         setLoading(true);
         const response = await fetch(`${BASE_URL}/api/grants`, {
@@ -133,17 +139,53 @@ const GrantDashboard = () => {
           body: JSON.stringify(userProfile),
         });
 
+        console.log("[Dashboard] Response status:", response.status);
+
+        if (!response.ok) {
+          console.error("[Dashboard] API error:", response.statusText);
+          const errorText = await response.text();
+          console.error("[Dashboard] Error details:", errorText);
+          setGrants([]);
+          return;
+        }
+
         const data = await response.json();
+        console.log("[Dashboard] Response data type:", typeof data);
+        console.log("[Dashboard] Response is array:", Array.isArray(data));
+        console.log("[Dashboard] Response data:", data);
+        console.log("[Dashboard] Response data length:", data?.length);
 
         if (Array.isArray(data)) {
-          console.log('[Dashboard] Grants loaded:', data.length);
+          console.log("[Dashboard] ✅ Grants loaded:", data.length);
+
+          if (data.length === 0) {
+            console.warn("[Dashboard] ⚠️ Backend returned 0 grants!");
+            console.warn("  Possible reasons:");
+            console.warn(
+              "  1. Backend database is empty (no grants added yet)"
+            );
+            console.warn("  2. No grants match your profile criteria");
+            console.warn("  3. Backend matching algorithm is too strict");
+            console.warn(
+              "  Profile sent to backend:",
+              JSON.stringify(userProfile, null, 2)
+            );
+          } else {
+            console.log(
+              "[Dashboard] 🎉 Successfully loaded grants:",
+              data.slice(0, 2)
+            );
+          }
+
           setGrants(data);
         } else {
-          console.error("Invalid grants data:", data);
+          console.error("[Dashboard] ❌ Invalid grants data format:", data);
+          console.error("[Dashboard] Expected array, got:", typeof data);
           setGrants([]);
         }
       } catch (error) {
-        console.error("Failed to fetch grants:", error);
+        console.error("[Dashboard] Failed to fetch grants:", error);
+        setGrants([]);
       } finally {
         setLoading(false);
       }
@@ -161,7 +203,9 @@ const GrantDashboard = () => {
 
   const toggleSaveGrant = (grantId: string) => {
     setSavedGrants((prev) =>
-      prev.includes(grantId) ? prev.filter((id) => id !== grantId) : [...prev, grantId]
+      prev.includes(grantId)
+        ? prev.filter((id) => id !== grantId)
+        : [...prev, grantId]
     );
   };
 
@@ -192,10 +236,10 @@ const GrantDashboard = () => {
       if (sortBy === "deadline") {
         const aDays = getDaysUntil(a.deadline);
         const bDays = getDaysUntil(b.deadline);
-    
+
         // 1. If both are NaN, treat them equal
         if (isNaN(aDays) && isNaN(bDays)) return 0;
-    
+
         // 2. If one is NaN, prioritize NaN over expired grants but after upcoming ones
         if (isNaN(aDays)) {
           return bDays < 0 ? -1 : 1; // If b is expired, a(NaN) comes first; if b is upcoming, b comes first
@@ -203,18 +247,18 @@ const GrantDashboard = () => {
         if (isNaN(bDays)) {
           return aDays < 0 ? 1 : -1; // If a is expired, b(NaN) comes first; if a is upcoming, a comes first
         }
-    
+
         // 3. Now both are numbers (not NaN)
         // If one is expired (<0) and one is upcoming (>0)
         if (aDays < 0 && bDays >= 0) return 1;
         if (bDays < 0 && aDays >= 0) return -1;
 
         if (aDays < 0 && bDays < 0) return bDays - aDays; // Both are expired, sort by days remaining (ascending)
-    
+
         // 4. Otherwise normal ascending sort
         return aDays - bDays;
       }
-    
+
       const parseAmount = (amountStr: string): number => {
         if (!amountStr) return 0;
         const match = amountStr.replace(/,/g, "").match(/\d+/);
@@ -229,15 +273,32 @@ const GrantDashboard = () => {
         const amountB = parseAmount(b.amount);
         return amountB - amountA; // Higher amount first
       }
-    
+
       if (sortBy === "match") {
-        return calculateMatchPercentage(userProfile, b) - calculateMatchPercentage(userProfile, a);
+        return (
+          calculateMatchPercentage(userProfile, b) -
+          calculateMatchPercentage(userProfile, a)
+        );
       }
-    
+
       return 0;
     });
-    
-  const userSummary = `Showing ${filteredGrants.length} grants matched for a ${userProfile.age}-year-old ${userProfile.identifiers.join(", ")} ${userProfile.gender} with ${userProfile.citizenship} status, studying ${userProfile.education} (${userProfile.degreeType?.trim() || "Degree"}) in ${userProfile.fieldOfStudy} (${userProfile.yearOfStudy || "Year not specified"}) at a ${userProfile.gpa ? `GPA of ${userProfile.gpa}` : "GPA not specified"} in ${userProfile.country}. Ethnicity: ${userProfile.ethnicity || "Not specified"}.`;
+
+  const userSummary = userProfile
+    ? `Showing ${filteredGrants.length} grants matched for a ${
+        userProfile.age || 0
+      }-year-old ${(userProfile.identifiers || []).join(", ")} ${
+        userProfile.gender || ""
+      } with ${userProfile.citizenship || ""} status, studying ${
+        userProfile.education || ""
+      } (${userProfile.degreeType?.trim() || "Degree"}) in ${
+        userProfile.fieldOfStudy || ""
+      } (${userProfile.yearOfStudy || "Year not specified"}) at a ${
+        userProfile.gpa ? `GPA of ${userProfile.gpa}` : "GPA not specified"
+      } in ${userProfile.country || ""}. Ethnicity: ${
+        userProfile.ethnicity || "Not specified"
+      }.`
+    : "Loading profile...";
 
   const renderGrantCards = () => (
     <motion.div
@@ -296,7 +357,9 @@ const GrantDashboard = () => {
       >
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Your Grant Dashboard</h1>
+            <h1 className="text-3xl font-bold text-foreground">
+              Your Grant Dashboard
+            </h1>
             <p className="text-muted-foreground mt-2">{userSummary}</p>
           </div>
           <div className="flex items-center gap-3 w-full md:w-auto">
@@ -316,16 +379,34 @@ const GrantDashboard = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => setSortBy("deadline")}
-                  className={sortBy === "deadline" ? "bg-primary text-primary-foreground" : ""}>
+                <DropdownMenuItem
+                  onClick={() => setSortBy("deadline")}
+                  className={
+                    sortBy === "deadline"
+                      ? "bg-primary text-primary-foreground"
+                      : ""
+                  }
+                >
                   Sort by Deadline
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortBy("amount")}
-                  className={sortBy === "amount" ? "bg-primary text-primary-foreground" : ""}>
+                <DropdownMenuItem
+                  onClick={() => setSortBy("amount")}
+                  className={
+                    sortBy === "amount"
+                      ? "bg-primary text-primary-foreground"
+                      : ""
+                  }
+                >
                   Sort by Amount
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setSortBy("match")}
-                  className={sortBy === "match" ? "bg-primary text-primary-foreground" : ""}>
+                <DropdownMenuItem
+                  onClick={() => setSortBy("match")}
+                  className={
+                    sortBy === "match"
+                      ? "bg-primary text-primary-foreground"
+                      : ""
+                  }
+                >
                   Sort by Relevance
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -343,7 +424,12 @@ const GrantDashboard = () => {
         ) : (
           <div className="flex flex-col lg:flex-row lg:items-start gap-6">
             <div className="flex-1">
-              <Tabs defaultValue="all" onValueChange={setActiveTab} value={activeTab} className="w-full">
+              <Tabs
+                defaultValue="all"
+                onValueChange={setActiveTab}
+                value={activeTab}
+                className="w-full"
+              >
                 <TabsList className="grid grid-cols-2 w-full sm:w-auto">
                   <TabsTrigger value="all">All Grants</TabsTrigger>
                   <TabsTrigger value="saved">
@@ -361,10 +447,7 @@ const GrantDashboard = () => {
                     <>
                       {renderGrantCards()}
                       <div className="flex justify-center mt-8">
-                        <Button
-                          variant="outline"
-                          onClick={handleNewGrants}
-                        >
+                        <Button variant="outline" onClick={handleNewGrants}>
                           Find New Grants
                         </Button>
                       </div>
@@ -393,14 +476,17 @@ const GrantDashboard = () => {
                 </TabsContent>
 
                 <TabsContent value="saved">
-                  {savedGrants.length > 0 ? renderGrantCards() : (
+                  {savedGrants.length > 0 ? (
+                    renderGrantCards()
+                  ) : (
                     <div className="text-center py-12">
                       <BookmarkCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                       <p className="text-muted-foreground text-lg">
                         You haven't saved any grants yet.
                       </p>
                       <p className="text-muted-foreground">
-                        Browse grants and click the bookmark icon to save them for later.
+                        Browse grants and click the bookmark icon to save them
+                        for later.
                       </p>
                     </div>
                   )}
@@ -416,11 +502,13 @@ const GrantDashboard = () => {
             grantDeadline={selectedGrant.deadline}
             grantAmount={`${selectedGrant.amount}`}
             grantRequirements={
-              selectedGrant.requirements
-                ?.flatMap((req) =>
-                  req.split(/[;,]/).map((r) => r.trim()).filter(Boolean)
-                ) ?? []
-            }            
+              selectedGrant.requirements?.flatMap((req) =>
+                req
+                  .split(/[;,]/)
+                  .map((r) => r.trim())
+                  .filter(Boolean)
+              ) ?? []
+            }
             isOpen={showAssistant}
             onClose={() => setShowAssistant(false)}
             onSaveGrant={() => toggleSaveGrant(selectedGrant.id)}

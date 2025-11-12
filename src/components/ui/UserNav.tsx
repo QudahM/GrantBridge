@@ -12,6 +12,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { User, Settings, LogOut, LayoutDashboard, Home } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { fetchUserProfile } from "../../lib/profile";
+import { toLegacyProfile, isProfileCompleteEnough } from "../../lib/profileMap";
 
 interface UserNavProps {
   className?: string;
@@ -48,68 +50,119 @@ export const UserNav = ({ className = "" }: UserNavProps) => {
     navigate("/");
   };
 
+  const handleDashboardClick = async () => {
+    if (!user?.id) {
+      navigate("/login");
+      return;
+    }
+
+    try {
+      console.log('[UserNav] Navigating to dashboard, checking profile...');
+      
+      // Fetch user profile
+      const profile = await fetchUserProfile(user.id);
+      
+      if (!profile) {
+        console.log('[UserNav] No profile found → /onboarding');
+        navigate("/onboarding");
+        return;
+      }
+
+      // Check if profile is complete enough
+      if (isProfileCompleteEnough(profile)) {
+        console.log('[UserNav] Profile complete → /dashboard with data');
+        const legacyProfile = toLegacyProfile(profile);
+        navigate("/dashboard", { state: legacyProfile });
+      } else {
+        console.log('[UserNav] Profile incomplete → /onboarding');
+        navigate("/onboarding");
+      }
+    } catch (error) {
+      console.error('[UserNav] Error fetching profile:', error);
+      // Fallback to onboarding on error
+      navigate("/onboarding");
+    }
+  };
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          className={`flex items-center gap-3 px-3 py-2 rounded-full bg-slate-800/80 border border-slate-700/50 backdrop-blur-sm hover:bg-slate-800 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 focus:ring-offset-slate-900 ${className}`}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className={`flex items-center gap-3 px-4 py-2.5 rounded-xl bg-card dark:bg-card border border-border dark:border-border hover:bg-accent dark:hover:bg-accent transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-background ${className}`}
         >
-          <Avatar className="w-8 h-8 border-2 border-indigo-500/30">
+          <Avatar className="w-9 h-9 border-2 border-primary/30">
             <AvatarImage src="" alt={user.user_metadata?.first_name} />
-            <AvatarFallback className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white text-sm font-medium">
+            <AvatarFallback className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white text-sm font-semibold">
               {getInitials()}
             </AvatarFallback>
           </Avatar>
-          <div className="hidden md:flex flex-col items-start">
-            <span className="text-sm font-medium text-white">
-              {user.user_metadata?.first_name || "User"}
+          <div className="flex flex-col items-start min-w-0">
+            <span className="text-sm font-semibold text-foreground dark:text-foreground truncate max-w-[150px]">
+              {user.user_metadata?.first_name && user.user_metadata?.last_name
+                ? `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
+                : user.user_metadata?.first_name || "User"}
             </span>
-            <span className="text-xs text-slate-400">View Profile</span>
+            <span className="text-xs text-muted-foreground dark:text-muted-foreground">
+              View Profile
+            </span>
           </div>
         </motion.button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="end"
-        className="w-56 bg-slate-800 border-slate-700 text-white"
+        className="w-64 bg-card dark:bg-card border-border dark:border-border text-foreground dark:text-foreground shadow-lg"
       >
         <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">
-              {user.user_metadata?.first_name} {user.user_metadata?.last_name}
-            </p>
-            <p className="text-xs leading-none text-slate-400">{user.email}</p>
+          <div className="flex flex-col space-y-2 p-2">
+            <div className="flex items-center gap-3">
+              <Avatar className="w-12 h-12 border-2 border-primary/30">
+                <AvatarImage src="" alt={user.user_metadata?.first_name} />
+                <AvatarFallback className="bg-gradient-to-br from-indigo-600 to-purple-600 text-white font-semibold">
+                  {getInitials()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="flex flex-col min-w-0 flex-1">
+                <p className="text-sm font-semibold leading-none text-foreground dark:text-foreground truncate">
+                  {user.user_metadata?.first_name} {user.user_metadata?.last_name}
+                </p>
+                <p className="text-xs leading-none text-muted-foreground dark:text-muted-foreground mt-1 truncate">
+                  {user.email}
+                </p>
+              </div>
+            </div>
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator className="bg-slate-700" />
+        <DropdownMenuSeparator className="bg-border dark:bg-border" />
         <DropdownMenuItem
           onClick={() => navigate("/")}
-          className="cursor-pointer focus:bg-slate-700 focus:text-white"
+          className="cursor-pointer focus:bg-accent dark:focus:bg-accent focus:text-accent-foreground dark:focus:text-accent-foreground py-2.5"
         >
-          <Home size={16} className="mr-2" />
-          Home
+          <Home size={16} className="mr-3" />
+          <span className="font-medium">Home</span>
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => navigate("/dashboard")}
-          className="cursor-pointer focus:bg-slate-700 focus:text-white"
+          onClick={handleDashboardClick}
+          className="cursor-pointer focus:bg-accent dark:focus:bg-accent focus:text-accent-foreground dark:focus:text-accent-foreground py-2.5"
         >
-          <LayoutDashboard size={16} className="mr-2" />
-          Dashboard
+          <LayoutDashboard size={16} className="mr-3" />
+          <span className="font-medium">Dashboard</span>
         </DropdownMenuItem>
         <DropdownMenuItem
           onClick={() => navigate("/profile")}
-          className="cursor-pointer focus:bg-slate-700 focus:text-white"
+          className="cursor-pointer focus:bg-accent dark:focus:bg-accent focus:text-accent-foreground dark:focus:text-accent-foreground py-2.5"
         >
-          <User size={16} className="mr-2" />
-          Profile
+          <User size={16} className="mr-3" />
+          <span className="font-medium">Profile</span>
         </DropdownMenuItem>
+        <DropdownMenuSeparator className="bg-border dark:bg-border" />
         <DropdownMenuItem
           onClick={handleSignOut}
-          className="cursor-pointer focus:bg-red-600 focus:text-white text-red-400"
+          className="cursor-pointer focus:bg-destructive dark:focus:bg-destructive focus:text-destructive-foreground dark:focus:text-destructive-foreground text-destructive dark:text-destructive py-2.5"
         >
-          <LogOut size={16} className="mr-2" />
-          Sign Out
+          <LogOut size={16} className="mr-3" />
+          <span className="font-medium">Sign Out</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

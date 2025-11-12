@@ -10,6 +10,8 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "../../contexts/AuthContext";
 import { useReducedMotion } from "../marketing/useReducedMotion";
 import { AuroraBackground } from "../effects";
+import { fetchUserProfile } from "../../lib/profile";
+import { isProfileCompleteEnough, toLegacyProfile } from "../../lib/profileMap";
 import {
   Eye,
   EyeOff,
@@ -118,7 +120,8 @@ export const LoginPage = () => {
   // Redirect if already authenticated
   useEffect(() => {
     if (user) {
-      navigate("/onboarding");
+      // Check profile and route accordingly
+      checkProfileAndRoute(user.id);
     }
   }, [user, navigate]);
 
@@ -156,6 +159,37 @@ export const LoginPage = () => {
   const handleCaptchaExpire = () => {
     setCaptchaToken(null);
     setError("Security verification expired. Please complete it again.");
+  };
+
+  // Check profile completeness and route user accordingly
+  const checkProfileAndRoute = async (userId: string) => {
+    try {
+      console.log('[Login] Checking profile for user:', userId);
+      
+      // Fetch user profile from Supabase
+      const profile = await fetchUserProfile(userId);
+      
+      if (!profile) {
+        console.log('[Login] No profile found → /onboarding');
+        navigate("/onboarding");
+        return;
+      }
+
+      // Check if profile has enough information
+      if (isProfileCompleteEnough(profile)) {
+        console.log('[Login] Profile complete → /dashboard with data');
+        // Convert to legacy format and navigate to dashboard
+        const legacyProfile = toLegacyProfile(profile);
+        navigate("/dashboard", { state: legacyProfile });
+      } else {
+        console.log('[Login] Profile incomplete → /onboarding');
+        navigate("/onboarding");
+      }
+    } catch (error) {
+      console.error('[Login] Error checking profile:', error);
+      // On error, default to onboarding
+      navigate("/onboarding");
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -223,9 +257,8 @@ export const LoginPage = () => {
           setError(error.message);
           // Reset Turnstile on error
           resetTurnstile();
-        } else {
-          navigate("/onboarding");
         }
+        // Note: User routing is handled by the useEffect hook when user state updates
       }
     } catch (err) {
       setError("An unexpected error occurred");
