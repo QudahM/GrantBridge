@@ -67,7 +67,7 @@ export const Steps = () => {
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
           {/* Connection Lines (Desktop) */}
-          <div className="hidden md:block absolute top-24 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent" />
+          <div className="hidden md:block absolute top-1/2 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent -translate-y-1/2" />
           
           {steps.map((step, index) => (
             <motion.div
@@ -101,9 +101,9 @@ export const Steps = () => {
                 </p>
               </div>
 
-              {/* Arrow (Desktop) */}
+              {/* Arrow (Desktop) - Centered vertically */}
               {index < steps.length - 1 && (
-                <div className="hidden md:block absolute top-24 -right-4 z-10">
+                <div className="hidden md:flex absolute top-1/2 -right-7 z-10 -translate-y-1/2 items-center justify-center">
                   <ArrowRight size={24} className="text-indigo-400" />
                 </div>
               )}
