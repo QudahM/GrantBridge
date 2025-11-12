@@ -1,10 +1,11 @@
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
 import { useReducedMotion } from "./useReducedMotion";
+import { useSmartCta } from "../../hooks/useSmartCta";
 
 export const CtaBanner = () => {
   const prefersReducedMotion = useReducedMotion();
+  const { handleCtaClick } = useSmartCta();
 
   const fadeInUp = prefersReducedMotion
     ? { opacity: 1, y: 0 }
@@ -28,15 +29,14 @@ export const CtaBanner = () => {
         </p>
 
         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-          <Link to="/login">
-            <Button
-              size="lg"
-              className="px-8 py-5 text-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition-all duration-200 shadow-lg hover:shadow-xl"
-              aria-label="Start your academic funding journey"
-            >
-              Start your funding journey
-            </Button>
-          </Link>
+          <Button
+            size="lg"
+            onClick={handleCtaClick}
+            className="px-8 py-5 text-lg bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 transition-all duration-200 shadow-lg hover:shadow-xl"
+            aria-label="Start your academic funding journey"
+          >
+            Start your funding journey
+          </Button>
         </div>
       </motion.div>
     </section>

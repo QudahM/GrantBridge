@@ -105,14 +105,6 @@ export const UserNav = ({ className = "" }: UserNavProps) => {
           Profile
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => navigate("/profile")}
-          className="cursor-pointer focus:bg-slate-700 focus:text-white"
-        >
-          <Settings size={16} className="mr-2" />
-          Settings
-        </DropdownMenuItem>
-        <DropdownMenuSeparator className="bg-slate-700" />
-        <DropdownMenuItem
           onClick={handleSignOut}
           className="cursor-pointer focus:bg-red-600 focus:text-white text-red-400"
         >

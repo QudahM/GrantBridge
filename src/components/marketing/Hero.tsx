@@ -3,13 +3,15 @@ import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useReducedMotion } from "./useReducedMotion";
+import { useSmartCta } from "../../hooks/useSmartCta";
 import { Search, TrendingUp, Users, DollarSign, ArrowRight, Sparkles } from "lucide-react";
 
 export const Hero = () => {
   const prefersReducedMotion = useReducedMotion();
   const navigate = useNavigate();
+  const { handleCtaClick } = useSmartCta();
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleSearch = (e: React.FormEvent) => {
@@ -157,25 +159,23 @@ export const Hero = () => {
               })}
               className="flex flex-col sm:flex-row gap-4 pt-4"
             >
-              <Link to="/login" className="flex-1 sm:flex-initial">
-                <Button
-                  size="lg"
-                  className="w-full sm:w-auto px-8 py-6 text-base bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-                >
-                  Create Free Profile
-                </Button>
-              </Link>
-              <Link to="/explore" className="flex-1 sm:flex-initial">
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="w-full sm:w-auto px-8 py-6 text-base border border-slate-500 text-slate-100 
-                            bg-slate-900/40 hover:bg-slate-800 hover:text-white hover:border-slate-400 
-                            transition-all duration-200"
-                >
-                  Browse Grants
-                </Button>
-              </Link>
+              <Button
+                size="lg"
+                onClick={handleCtaClick}
+                className="w-full sm:w-auto px-8 py-6 text-base bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+              >
+                Create Free Profile
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={handleCtaClick}
+                className="w-full sm:w-auto px-8 py-6 text-base border border-slate-500 text-slate-100 
+                          bg-slate-900/40 hover:bg-slate-800 hover:text-white hover:border-slate-400 
+                          transition-all duration-200"
+              >
+                View All Grants
+              </Button>
             </motion.div>
           </motion.div>
 

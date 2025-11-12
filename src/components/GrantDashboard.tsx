@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Filter, BookmarkCheck } from "lucide-react";
+import { Search, Filter, BookmarkCheck, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -17,6 +17,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import DarkModeToggle from "@/components/ui/DarkModeToggle";
 import { UserNav } from "@/components/ui/UserNav";
+import { useAuth } from "../contexts/AuthContext";
+import { fetchUserProfile } from "../lib/profile";
+import { toLegacyProfile } from "../lib/profileMap";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
 
@@ -55,8 +58,10 @@ const calculateMatchPercentage = (userProfile: UserProfile, grant: Grant) => {
 
 const GrantDashboard = () => {
   const location = useLocation();
-  const userProfile = location.state as UserProfile;
+  const { user } = useAuth();
+  const navigate = useNavigate();
 
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(location.state as UserProfile);
   const [grants, setGrants] = useState<Grant[]>([]);
   const [selectedGrant, setSelectedGrant] = useState<Grant | null>(null);
   const [showAssistant, setShowAssistant] = useState(false);
@@ -65,11 +70,63 @@ const GrantDashboard = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [loading, setLoading] = useState(true);
-  const navigate = useNavigate();
+  const [profileLoading, setProfileLoading] = useState(!location.state);
 
+  // Load user profile if not provided via location.state
   useEffect(() => {
-    const fetchGrants = async () => {
+    const loadProfile = async () => {
+      console.log('[Dashboard] Checking profile availability');
+      
+      // If profile already provided via location.state, skip fetch
+      if (location.state) {
+        console.log('[Dashboard] Using profile from location.state');
+        setProfileLoading(false);
+        return;
+      }
+
+      // Check if user is logged in
+      if (!user) {
+        console.log('[Dashboard] No user logged in → redirect to /login');
+        navigate('/login');
+        return;
+      }
+
+      // Fetch profile from Supabase
       try {
+        console.log('[Dashboard] Fetching profile from Supabase for user:', user.id);
+        setProfileLoading(true);
+        const profile = await fetchUserProfile(user.id);
+        
+        if (!profile) {
+          console.log('[Dashboard] No profile found → redirect to /onboarding');
+          navigate('/onboarding');
+          return;
+        }
+
+        console.log('[Dashboard] Profile loaded, converting to legacy format');
+        const legacyProfile = toLegacyProfile(profile);
+        setUserProfile(legacyProfile);
+        setProfileLoading(false);
+      } catch (error) {
+        console.error('[Dashboard] Error fetching profile:', error);
+        console.log('[Dashboard] Fallback → redirect to /onboarding');
+        navigate('/onboarding');
+      }
+    };
+
+    loadProfile();
+  }, [user, location.state, navigate]);
+
+  // Fetch grants once profile is available
+  useEffect(() => {
+    if (!userProfile || profileLoading) {
+      return;
+    }
+
+    const fetchGrants = async () => {
+      console.log('[Dashboard] Fetching grants with profile:', userProfile);
+      try {
+        setLoading(true);
         const response = await fetch(`${BASE_URL}/api/grants`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -79,6 +136,7 @@ const GrantDashboard = () => {
         const data = await response.json();
 
         if (Array.isArray(data)) {
+          console.log('[Dashboard] Grants loaded:', data.length);
           setGrants(data);
         } else {
           console.error("Invalid grants data:", data);
@@ -92,7 +150,7 @@ const GrantDashboard = () => {
     };
 
     fetchGrants();
-  }, []);
+  }, [userProfile, profileLoading]);
 
   const getDaysUntil = (dateString: string) => {
     const deadline = new Date(dateString);
@@ -215,6 +273,18 @@ const GrantDashboard = () => {
       ))}
     </motion.div>
   );
+
+  // Show loading view while fetching profile
+  if (profileLoading || !userProfile) {
+    return (
+      <div className="bg-background dark:bg-background-dark min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-indigo-500 mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-background dark:bg-background-dark min-h-screen p-6 md:p-8">
