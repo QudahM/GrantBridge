@@ -3,6 +3,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import fetch from 'node-fetch';
 import cron from 'node-cron';
+import rateLimit from 'express-rate-limit';
 import { syncGrantsToSupabase } from './grantsSync';
 
 dotenv.config();
@@ -16,7 +17,7 @@ const PORT = process.env.PORT ?? 5000;
 const allowedOrigins = [
   ...(process.env.FRONTEND_URL?.split(',').map(url => url.trim()) || []),
   // Allow localhost for development
-  ...(process.env.NODE_ENV === 'development' 
+  ...(process.env.NODE_ENV === 'development'
     ? ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000']
     : []
   )
@@ -28,7 +29,7 @@ app.use(cors({
     if (!origin) {
       return callback(null, true);
     }
-    
+
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -44,10 +45,41 @@ app.use(cors({
 
 app.use(express.json());
 
+// Rate limiting configuration
+// General API rate limiter - applies to all /api/* routes
+const generalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // 100 requests per 15 minutes per IP
+  message: 'Too many requests from this IP, please try again later.',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
+
+// Strict limiter for expensive Sonar API calls
+const sonarLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 25, // 10 grant searches per hour per IP
+  message: 'Grant search limit reached. Please try again in an hour.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Very strict limiter for admin/sync endpoints
+const syncLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 1, // Only 1 manual sync per hour
+  message: 'Sync already triggered recently. Please wait an hour.',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply general rate limiting to all API routes
+app.use('/api/', generalLimiter);
+
 // Health check endpoint
 app.get('/api/health', (_req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     timestamp: new Date().toISOString(),
     services: {
       grants_cache: 'active',
@@ -72,7 +104,8 @@ cron.schedule('0 2 */7 * *', async () => {
 console.log('[Server] Grants sync cron job scheduled (every 7 days at 2 AM)');
 
 // Manual sync endpoint for testing/admin use
-app.post('/api/sync-grants', async (req, res): Promise<any> => {
+// Rate limited to 1 request per hour
+app.post('/api/sync-grants', syncLimiter, async (req, res): Promise<any> => {
   try {
     console.log('[API] Manual grants sync triggered');
     await syncGrantsToSupabase();
@@ -88,32 +121,32 @@ app.post('/api/sync-grants', async (req, res): Promise<any> => {
 app.get('/api/featured-grants', async (_req, res): Promise<any> => {
   try {
     const { supabaseAdmin } = await import('./supabaseClient');
-    
+
     console.log('[API] Fetching featured grants from grants_cache table...');
-    
+
     // Fetch all featured grants from Supabase (should be 5)
     const { data, error } = await supabaseAdmin
       .from('grants_cache')
       .select('*')
       .eq('is_featured', true);
-    
+
     if (error) {
       console.error('[API] Supabase error:', error.message);
       // Always return valid JSON, even on error
       return res.json([]);
     }
-    
+
     // Check if cache is empty or stale (older than 7 days)
     const needsSync = !data || data.length === 0 || isGrantsCacheStale(data);
-    
+
     if (needsSync) {
       console.log('[API] Cache is empty or stale (>7 days), triggering background sync...');
-      
+
       // Trigger sync in background (don't wait for it)
       syncGrantsToSupabase().catch(err => {
         console.error('[API] Background sync failed:', err);
       });
-      
+
       // If we have some data (even if stale), return it immediately
       if (data && data.length > 0) {
         console.log('[API] Returning stale data while sync runs in background');
@@ -121,47 +154,47 @@ app.get('/api/featured-grants', async (_req, res): Promise<any> => {
         const selected = shuffled.slice(0, 3);
         return res.json(selected);
       }
-      
+
       // If no data at all, wait for sync to complete
       console.log('[API] No data available, waiting for sync to complete...');
       try {
         await syncGrantsToSupabase();
-        
+
         // Fetch the newly synced grants
         const { data: newData, error: newError } = await supabaseAdmin
           .from('grants_cache')
           .select('*')
           .eq('is_featured', true);
-        
+
         if (newError) {
           console.error('[API] Failed to fetch grants after sync:', newError.message);
           return res.json([]);
         }
-        
+
         if (!newData || newData.length === 0) {
           console.log('[API] No grants available after sync');
           return res.json([]);
         }
-        
+
         const shuffled = [...newData].sort(() => Math.random() - 0.5);
         const selected = shuffled.slice(0, 3);
         console.log('[API] Returning freshly synced grants');
         return res.json(selected);
-        
+
       } catch (syncError) {
         console.error('[API] Sync failed:', syncError);
         // Always return valid JSON
         return res.json([]);
       }
     }
-    
+
     // Cache is fresh, return data
     const shuffled = [...data].sort(() => Math.random() - 0.5);
     const selected = shuffled.slice(0, 3);
-    
+
     console.log(`[API] Randomly selected ${selected.length} grants from ${data.length} available`);
     return res.json(selected);
-    
+
   } catch (error) {
     console.error('[API] Error fetching featured grants:', error);
     // Always return valid JSON, even on error
@@ -172,7 +205,7 @@ app.get('/api/featured-grants', async (_req, res): Promise<any> => {
 // Helper function to check if grants cache is stale (older than 7 days)
 function isGrantsCacheStale(grants: any[]): boolean {
   if (!grants || grants.length === 0) return true;
-  
+
   // Check if any grant has a created_at or updated_at timestamp
   const latestGrant = grants[0];
   if (!latestGrant.created_at && !latestGrant.updated_at) {
@@ -180,22 +213,23 @@ function isGrantsCacheStale(grants: any[]): boolean {
     console.log('[API] No timestamp found, assuming cache is fresh');
     return false;
   }
-  
+
   const timestamp = latestGrant.updated_at || latestGrant.created_at;
   const grantDate = new Date(timestamp);
   const now = new Date();
   const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
-  
+
   const isStale = (now.getTime() - grantDate.getTime()) > sevenDaysInMs;
-  
+
   if (isStale) {
     console.log(`[API] Cache is stale (${Math.floor((now.getTime() - grantDate.getTime()) / (24 * 60 * 60 * 1000))} days old)`);
   }
-  
+
   return isStale;
 }
 
-app.post('/api/grants', async (req, res): Promise<any> => {
+// Grant search endpoint - Rate limited to 10 requests per hour (expensive Sonar API calls)
+app.post('/api/grants', sonarLimiter, async (req, res): Promise<any> => {
   try {
     const {
       age,
