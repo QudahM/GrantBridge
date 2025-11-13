@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 import { useReducedMotion } from "./useReducedMotion";
 import { DollarSign, Calendar, Users, ArrowRight, Loader2 } from "lucide-react";
 
-const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
+const BASE_URL = import.meta.env.VITE_API_URL ?? "https://grantbridge-server.onrender.com";
 
 /**
  * CACHED GRANTS PIPELINE
