@@ -242,7 +242,7 @@ export const Hero = () => {
                   <div className="text-xs text-slate-400">Award Amount</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-semibold text-indigo-400">March 15, 2025</div>
+                  <div className="text-sm font-semibold text-indigo-400">December 15, 2025</div>
                   <div className="text-xs text-slate-400">Deadline</div>
                 </div>
               </div>

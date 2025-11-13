@@ -23,7 +23,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
-AUTHENTICATION_SETUP.md
 
 !node_modules/.vite
 
