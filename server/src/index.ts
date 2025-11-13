@@ -10,7 +10,38 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT ?? 5000;
 
-app.use(cors());
+// Secure CORS configuration
+// IMPORTANT: These are your FRONTEND domains (Hostinger), not backend (Render)
+// FRONTEND_URL can be comma-separated for multiple domains: https://domain.com,https://www.domain.com
+const allowedOrigins = [
+  ...(process.env.FRONTEND_URL?.split(',').map(url => url.trim()) || []),
+  // Allow localhost for development
+  ...(process.env.NODE_ENV === 'development' 
+    ? ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000']
+    : []
+  )
+].filter(Boolean) as string[];
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps, Postman, curl)
+    if (!origin) {
+      return callback(null, true);
+    }
+    
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      console.warn(`[CORS] Blocked request from unauthorized origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  maxAge: 86400, // 24 hours
+}));
+
 app.use(express.json());
 
 // Health check endpoint
