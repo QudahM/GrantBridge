@@ -130,7 +130,10 @@ export const Hero = () => {
               className="relative"
             >
               <div className="relative flex items-center">
-                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" size={20} />
+                <Search
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10"
+                  size={20}
+                />
                 <Input
                   type="text"
                   placeholder="Search by field, degree, or keyword..."

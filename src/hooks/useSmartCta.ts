@@ -5,8 +5,8 @@ import { toLegacyProfile, isProfileCompleteEnough } from '../lib/profileMap';
 
 /**
  * Smart CTA hook that routes users based on authentication and profile completeness
- * - Not logged in → /onboarding
- * - Logged in with incomplete profile → /onboarding
+ * - Not logged in → /login (then after signup → /onboarding)
+ * - Logged in with incomplete/no profile → /onboarding
  * - Logged in with complete profile → /dashboard (with profile data)
  */
 export const useSmartCta = () => {
@@ -16,19 +16,19 @@ export const useSmartCta = () => {
   const handleCtaClick = async () => {
     console.log('[Smart CTA] Click detected, user:', user?.id);
 
-    // Case 1: Not logged in → send to onboarding
+    // Case 1: Not logged in → send to login page
     if (!user) {
-      console.log('[Smart CTA] No user logged in → /onboarding');
-      navigate('/onboarding');
+      console.log('[Smart CTA] No user logged in → /login');
+      navigate('/login');
       return;
     }
 
-    // Case 2: Logged in → check profile
+    // Case 2: Logged in → check profile completeness
     try {
       console.log('[Smart CTA] Fetching profile for user:', user.id);
       const profile = await fetchUserProfile(user.id);
 
-      // Check if profile is complete enough
+      // Check if profile exists and is complete enough
       if (profile && isProfileCompleteEnough(profile)) {
         console.log('[Smart CTA] Profile complete → /dashboard with data');
         const legacyProfile = toLegacyProfile(profile);
