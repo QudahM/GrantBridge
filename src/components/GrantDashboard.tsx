@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
-import { Search, Filter, BookmarkCheck, Loader2 } from "lucide-react";
+import { Search, Filter, BookmarkCheck, Loader2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -215,7 +215,7 @@ const GrantDashboard = () => {
   };
 
   const handleNewGrants = () => {
-    navigate("/");
+    navigate("/onboarding");
   };
 
   const filteredGrants = grants
@@ -355,6 +355,19 @@ const GrantDashboard = () => {
         transition={{ duration: 0.5 }}
         className="max-w-7xl mx-auto"
       >
+        {/* Back to Home Button */}
+        <div className="mb-6">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => navigate("/")}
+            className="gap-2 hover:bg-accent"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Back to Home
+          </Button>
+        </div>
+
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <h1 className="text-3xl font-bold text-foreground">

@@ -6,7 +6,14 @@ import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
 import { useReducedMotion } from "./useReducedMotion";
 import { useSmartCta } from "../../hooks/useSmartCta";
-import { Search, TrendingUp, Users, DollarSign, ArrowRight, Sparkles } from "lucide-react";
+import {
+  Search,
+  TrendingUp,
+  Users,
+  DollarSign,
+  ArrowRight,
+  Sparkles,
+} from "lucide-react";
 
 export const Hero = () => {
   const prefersReducedMotion = useReducedMotion();
@@ -46,9 +53,12 @@ export const Hero = () => {
     <section className="relative min-h-[85vh] flex items-center px-4 md:px-8 py-16 overflow-hidden bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900">
       {/* Subtle background pattern */}
       <div className="absolute inset-0 opacity-5">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
-        }} />
+        <div
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          }}
+        />
       </div>
 
       <div className="max-w-7xl mx-auto w-full relative z-10">
@@ -60,11 +70,13 @@ export const Hero = () => {
           >
             {/* Badge */}
             <motion.div
-              {...(prefersReducedMotion ? {} : {
-                initial: { opacity: 0, scale: 0.9 },
-                animate: { opacity: 1, scale: 1 },
-                transition: { delay: 0.1, duration: 0.5 }
-              })}
+              {...(prefersReducedMotion
+                ? {}
+                : {
+                    initial: { opacity: 0, scale: 0.9 },
+                    animate: { opacity: 1, scale: 1 },
+                    transition: { delay: 0.1, duration: 0.5 },
+                  })}
             >
               <Badge className="bg-indigo-600/20 text-indigo-300 border-indigo-500/30 px-4 py-1.5 text-sm font-medium">
                 <Sparkles size={14} className="mr-2" />
@@ -74,11 +86,13 @@ export const Hero = () => {
 
             {/* Headline */}
             <motion.h1
-              {...(prefersReducedMotion ? {} : {
-                initial: { opacity: 0, y: 20 },
-                animate: { opacity: 1, y: 0 },
-                transition: { delay: 0.2, duration: 0.5 }
-              })}
+              {...(prefersReducedMotion
+                ? {}
+                : {
+                    initial: { opacity: 0, y: 20 },
+                    animate: { opacity: 1, y: 0 },
+                    transition: { delay: 0.2, duration: 0.5 },
+                  })}
               className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight"
             >
               Find Grants That
@@ -89,29 +103,34 @@ export const Hero = () => {
 
             {/* Subheadline */}
             <motion.p
-              {...(prefersReducedMotion ? {} : {
-                initial: { opacity: 0, y: 20 },
-                animate: { opacity: 1, y: 0 },
-                transition: { delay: 0.3, duration: 0.5 }
-              })}
+              {...(prefersReducedMotion
+                ? {}
+                : {
+                    initial: { opacity: 0, y: 20 },
+                    animate: { opacity: 1, y: 0 },
+                    transition: { delay: 0.3, duration: 0.5 },
+                  })}
               className="text-lg md:text-xl text-slate-300 leading-relaxed max-w-xl"
             >
-              Search thousands of scholarships, research grants, and funding opportunities. 
-              Get personalized matches and AI-powered application assistance.
+              Search thousands of scholarships, research grants, and funding
+              opportunities. Get personalized matches and AI-powered application
+              assistance.
             </motion.p>
 
             {/* Search Bar */}
             <motion.form
               onSubmit={handleSearch}
-              {...(prefersReducedMotion ? {} : {
-                initial: { opacity: 0, y: 20 },
-                animate: { opacity: 1, y: 0 },
-                transition: { delay: 0.4, duration: 0.5 }
-              })}
+              {...(prefersReducedMotion
+                ? {}
+                : {
+                    initial: { opacity: 0, y: 20 },
+                    animate: { opacity: 1, y: 0 },
+                    transition: { delay: 0.4, duration: 0.5 },
+                  })}
               className="relative"
             >
               <div className="relative flex items-center">
-                <Search className="absolute left-4 text-slate-400" size={20} />
+                <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none z-10" size={20} />
                 <Input
                   type="text"
                   placeholder="Search by field, degree, or keyword..."
@@ -131,11 +150,13 @@ export const Hero = () => {
 
             {/* Quick Filters */}
             <motion.div
-              {...(prefersReducedMotion ? {} : {
-                initial: { opacity: 0 },
-                animate: { opacity: 1 },
-                transition: { delay: 0.5, duration: 0.5 }
-              })}
+              {...(prefersReducedMotion
+                ? {}
+                : {
+                    initial: { opacity: 0 },
+                    animate: { opacity: 1 },
+                    transition: { delay: 0.5, duration: 0.5 },
+                  })}
               className="flex flex-wrap gap-2"
             >
               <span className="text-sm text-slate-400 mr-2">Popular:</span>
@@ -152,11 +173,13 @@ export const Hero = () => {
 
             {/* CTAs */}
             <motion.div
-              {...(prefersReducedMotion ? {} : {
-                initial: { opacity: 0, y: 20 },
-                animate: { opacity: 1, y: 0 },
-                transition: { delay: 0.6, duration: 0.5 }
-              })}
+              {...(prefersReducedMotion
+                ? {}
+                : {
+                    initial: { opacity: 0, y: 20 },
+                    animate: { opacity: 1, y: 0 },
+                    transition: { delay: 0.6, duration: 0.5 },
+                  })}
               className="flex flex-col sm:flex-row gap-4 pt-4"
             >
               <Button
@@ -181,11 +204,13 @@ export const Hero = () => {
 
           {/* Right Column - Stats & Trust Indicators */}
           <motion.div
-            {...(prefersReducedMotion ? {} : {
-              initial: { opacity: 0, x: 20 },
-              animate: { opacity: 1, x: 0 },
-              transition: { delay: 0.4, duration: 0.6 }
-            })}
+            {...(prefersReducedMotion
+              ? {}
+              : {
+                  initial: { opacity: 0, x: 20 },
+                  animate: { opacity: 1, x: 0 },
+                  transition: { delay: 0.4, duration: 0.6 },
+                })}
             className="space-y-6"
           >
             {/* Stats Cards */}
@@ -193,11 +218,13 @@ export const Hero = () => {
               {stats.map((stat, index) => (
                 <motion.div
                   key={index}
-                  {...(prefersReducedMotion ? {} : {
-                    initial: { opacity: 0, y: 20 },
-                    animate: { opacity: 1, y: 0 },
-                    transition: { delay: 0.5 + index * 0.1, duration: 0.5 }
-                  })}
+                  {...(prefersReducedMotion
+                    ? {}
+                    : {
+                        initial: { opacity: 0, y: 20 },
+                        animate: { opacity: 1, y: 0 },
+                        transition: { delay: 0.5 + index * 0.1, duration: 0.5 },
+                      })}
                   className="bg-slate-800/50 backdrop-blur-sm border border-slate-700/50 rounded-xl p-4 text-center"
                 >
                   <div className="flex justify-center mb-2 text-indigo-400">
@@ -206,20 +233,20 @@ export const Hero = () => {
                   <div className="text-2xl font-bold text-white mb-1">
                     {stat.value}
                   </div>
-                  <div className="text-xs text-slate-400">
-                    {stat.label}
-                  </div>
+                  <div className="text-xs text-slate-400">{stat.label}</div>
                 </motion.div>
               ))}
             </div>
 
             {/* Featured Grant Preview */}
             <motion.div
-              {...(prefersReducedMotion ? {} : {
-                initial: { opacity: 0, y: 20 },
-                animate: { opacity: 1, y: 0 },
-                transition: { delay: 0.8, duration: 0.5 }
-              })}
+              {...(prefersReducedMotion
+                ? {}
+                : {
+                    initial: { opacity: 0, y: 20 },
+                    animate: { opacity: 1, y: 0 },
+                    transition: { delay: 0.8, duration: 0.5 },
+                  })}
               className="bg-gradient-to-br from-slate-800/80 to-slate-900/80 backdrop-blur-sm border border-slate-700/50 rounded-xl p-6 space-y-4"
             >
               <div className="flex items-start justify-between">
@@ -235,14 +262,16 @@ export const Hero = () => {
                   </p>
                 </div>
               </div>
-              
+
               <div className="flex items-center justify-between pt-4 border-t border-slate-700/50">
                 <div>
                   <div className="text-2xl font-bold text-white">$50,000</div>
                   <div className="text-xs text-slate-400">Award Amount</div>
                 </div>
                 <div className="text-right">
-                  <div className="text-sm font-semibold text-indigo-400">December 15, 2025</div>
+                  <div className="text-sm font-semibold text-indigo-400">
+                    December 15, 2025
+                  </div>
                   <div className="text-xs text-slate-400">Deadline</div>
                 </div>
               </div>
@@ -261,11 +290,13 @@ export const Hero = () => {
 
             {/* Trust Badge */}
             <motion.div
-              {...(prefersReducedMotion ? {} : {
-                initial: { opacity: 0 },
-                animate: { opacity: 1 },
-                transition: { delay: 1, duration: 0.5 }
-              })}
+              {...(prefersReducedMotion
+                ? {}
+                : {
+                    initial: { opacity: 0 },
+                    animate: { opacity: 1 },
+                    transition: { delay: 1, duration: 0.5 },
+                  })}
               className="text-center text-sm text-slate-400"
             >
               <p>Trusted by students at 50+ universities worldwide</p>

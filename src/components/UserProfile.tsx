@@ -1378,7 +1378,7 @@ export const UserProfile = () => {
                     </CardContent>
                   </Card>
 
-                  {/* Notification Settings */}
+                  {/* Notification Settings
                   <Card className="bg-gradient-to-br from-slate-800/90 to-slate-900/90 backdrop-blur-xl border border-emerald-500/20 shadow-2xl shadow-emerald-500/10">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2 text-xl">
@@ -1448,7 +1448,7 @@ export const UserProfile = () => {
                         </Badge>
                       </motion.div>
                     </CardContent>
-                  </Card>
+                  </Card> */}
 
                   {/* Danger Zone */}
                   <Card className="bg-gradient-to-br from-red-950/80 via-rose-950/70 to-red-900/80 backdrop-blur-xl border-2 border-red-500/50 shadow-2xl shadow-red-500/30 relative overflow-hidden">
