@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { Routes, Route } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
-import { LoginPage, ProtectedRoute } from "./components/auth";
+import { LoginPage, ProtectedRoute, ForgotPasswordPage, ResetPasswordPage } from "./components/auth";
 import Home from "./components/home";
 import OnboardingFlow from "./components/OnboardingFlow";
 import GrantDashboard from "./components/GrantDashboard";
@@ -17,6 +17,8 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route 
             path="/onboarding" 
             element={

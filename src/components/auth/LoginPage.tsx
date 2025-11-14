@@ -646,7 +646,7 @@ export const LoginPage = () => {
                 </Button>
               </div>
 
-              <div className="text-center">
+              <div className="text-center space-y-2">
                 <button
                   type="button"
                   onClick={handleToggleMode}
@@ -656,6 +656,17 @@ export const LoginPage = () => {
                     ? "Already have an account? Sign in"
                     : "Don't have an account? Sign up"}
                 </button>
+                
+                {!isSignUp && (
+                  <div>
+                    <Link
+                      to="/forgot-password"
+                      className="text-slate-400 hover:text-indigo-400 transition-colors duration-200 text-sm focus-visible:ring-2 focus-visible:ring-slate-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900 rounded"
+                    >
+                      Forgot your password?
+                    </Link>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
