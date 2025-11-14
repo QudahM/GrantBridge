@@ -130,7 +130,7 @@ const GrantDashboard = () => {
 
     const fetchGrants = async () => {
       console.log("[Dashboard] Fetching grants with profile:", userProfile);
-      console.log("[Dashboard] API URL:", BASE_URL);
+      console.log("[Dashboard] API URL:");
       try {
         setLoading(true);
         const response = await fetch(`${BASE_URL}/api/grants`, {
