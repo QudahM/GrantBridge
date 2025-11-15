@@ -20,6 +20,7 @@ import { UserNav } from "@/components/ui/UserNav";
 import { useAuth } from "../contexts/AuthContext";
 import { fetchUserProfile } from "../lib/profile";
 import { toLegacyProfile } from "../lib/profileMap";
+import { fetchSavedGrants, saveGrant, unsaveGrant } from "../lib/savedGrants";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
 
@@ -73,6 +74,7 @@ const GrantDashboard = () => {
   const [activeTab, setActiveTab] = useState("all");
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(!location.state);
+  const [savedGrantsLoading, setSavedGrantsLoading] = useState(true);
 
   // Load user profile if not provided via location.state
   useEffect(() => {
@@ -201,12 +203,72 @@ const GrantDashboard = () => {
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
-  const toggleSaveGrant = (grantId: string) => {
+  // Load saved grants when user is available
+  useEffect(() => {
+    const loadSavedGrants = async () => {
+      if (!user) {
+        setSavedGrantsLoading(false);
+        return;
+      }
+
+      try {
+        console.log('[Dashboard] Loading saved grants for user:', user.id);
+        setSavedGrantsLoading(true);
+        const saved = await fetchSavedGrants(user.id);
+        console.log('[Dashboard] Loaded saved grants:', saved);
+        setSavedGrants(saved);
+      } catch (error) {
+        console.error('[Dashboard] Error loading saved grants:', error);
+      } finally {
+        setSavedGrantsLoading(false);
+      }
+    };
+
+    loadSavedGrants();
+  }, [user]);
+
+  const toggleSaveGrant = async (grantId: string) => {
+    if (!user) {
+      console.warn('[Dashboard] Cannot save grant: user not logged in');
+      return;
+    }
+
+    const isSaved = savedGrants.includes(grantId);
+    
+    // Optimistic update
     setSavedGrants((prev) =>
-      prev.includes(grantId)
+      isSaved
         ? prev.filter((id) => id !== grantId)
         : [...prev, grantId]
     );
+
+    try {
+      if (isSaved) {
+        console.log('[Dashboard] Removing saved grant:', grantId);
+        const success = await unsaveGrant(user.id, grantId);
+        if (!success) {
+          // Revert on failure
+          setSavedGrants((prev) => [...prev, grantId]);
+          console.error('[Dashboard] Failed to remove saved grant');
+        }
+      } else {
+        console.log('[Dashboard] Saving grant:', grantId);
+        const success = await saveGrant(user.id, grantId);
+        if (!success) {
+          // Revert on failure
+          setSavedGrants((prev) => prev.filter((id) => id !== grantId));
+          console.error('[Dashboard] Failed to save grant');
+        }
+      }
+    } catch (error) {
+      console.error('[Dashboard] Error toggling saved grant:', error);
+      // Revert on error
+      setSavedGrants((prev) =>
+        isSaved
+          ? [...prev, grantId]
+          : prev.filter((id) => id !== grantId)
+      );
+    }
   };
 
   const handleOpenAssistant = (grant: Grant) => {
