@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { useAuth } from "../contexts/AuthContext";
 import { upsertUserProfile, UserProfileData } from "../lib/profile";
 import { Button } from "@/components/ui/button";
+import { OnboardingSEO } from "./SEO";
 import {
   Card,
   CardContent,
@@ -599,7 +600,9 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 text-white p-4 md:p-8 flex flex-col items-center">
+    <>
+      <OnboardingSEO />
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 text-white p-4 md:p-8 flex flex-col items-center">
       <div className="w-full max-w-4xl">
         <div className="mb-8">
           <Progress
@@ -653,6 +656,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
         </Card>
       </div>
     </div>
+    </>
   );
 };
 

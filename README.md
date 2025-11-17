@@ -28,10 +28,60 @@ Check it out here: [GrantBridge](https://grantbridge.online)
 ## Tech Stack
 
 **Frontend:**  
-React • TypeScript • TailwindCSS • Framer Motion • shadcn/ui
+React • TypeScript • TailwindCSS • Framer Motion • shadcn/ui • React Helmet Async
 
 **Backend:**  
 Node.js • Express • Perplexity Sonar API
+
+**Database:**  
+Supabase (PostgreSQL)
+
+**Deployment:**  
+- Frontend: AWS S3
+- Backend: AWS Lambda
+- Database: Supabase Cloud
+
+---
+
+## Architecture & Configuration
+
+### SEO Optimization
+
+GrantBridge is fully optimized for search engines with:
+
+- **Meta Tags** – Dynamic per-page titles, descriptions, and keywords
+- **Open Graph & Twitter Cards** – Optimized social media sharing
+- **Structured Data (JSON-LD)** – Rich snippets for search results
+- **Sitemap & Robots.txt** – Proper search engine crawling
+
+### Server Configuration
+
+**`.htaccess` (Apache Configuration)**
+
+The project includes an `.htaccess` file configured for Apache servers with:
+
+- **SPA Routing** – Redirects all routes to `index.html` for React Router
+- **HTTPS Enforcement** – Automatic redirect from HTTP to HTTPS (SEO ranking factor)
+- **Gzip Compression** – Reduces file sizes for faster page loads
+- **Browser Caching** – Optimizes repeat visits with cache headers
+- **Security Headers** – X-Content-Type-Options, X-Frame-Options, XSS-Protection
+
+### Project Structure
+
+```
+grantbridge/
+├── public/
+│   ├── .htaccess          # Apache server configuration
+│   ├── robots.txt         # Search engine crawling rules
+│   ├── sitemap.xml        # SEO sitemap
+│   └── Grantbridge_logo.png
+├── src/
+│   ├── components/
+│   │   ├── SEO.tsx        # Dynamic SEO meta tags
+│   │   └── ...
+│   └── ...
+└── server/                # Backend API
+```
 
 ---
 
@@ -55,21 +105,6 @@ pnpm install
 # Run development server
 pnpm dev
 ```
-
-### Environment Setup
-
-1. Create a `.env` file in the root of the project:
-
-    ```bash
-    touch .env
-    ```
-
-2. Add the following environment variables:
-
-    ```env
-    PORT=5000
-    PERPLEXITY_API_KEY=your_api_key_here
-    ```
 
 ---
 

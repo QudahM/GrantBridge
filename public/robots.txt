@@ -1,0 +1,15 @@
+# robots.txt for GrantBridge
+# Allow all search engines to crawl the site
+
+User-agent: *
+Allow: /
+
+# Disallow admin or sensitive areas (if any in the future)
+Disallow: /api/
+Disallow: /admin/
+
+# Sitemap location
+Sitemap: https://grantbridge.online/sitemap.xml
+
+# Crawl-delay (optional, helps prevent server overload)
+Crawl-delay: 1

@@ -9,6 +9,7 @@ import {
 } from "../lib/profile";
 import { supabase } from "../lib/supabase";
 import { Button } from "@/components/ui/button";
+import { ProfileSEO } from "./SEO";
 import {
   Card,
   CardContent,
@@ -466,7 +467,9 @@ export const UserProfile = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-teal-950 text-white relative overflow-hidden">
+    <>
+      <ProfileSEO />
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-teal-950 text-white relative overflow-hidden">
       {/* Enhanced Animated background elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {/* Main gradient orbs */}
@@ -1744,5 +1747,6 @@ export const UserProfile = () => {
         </DialogContent>
       </Dialog>
     </div>
+    </>
   );
 };

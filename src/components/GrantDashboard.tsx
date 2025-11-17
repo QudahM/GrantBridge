@@ -23,6 +23,7 @@ import { toLegacyProfile } from "../lib/profileMap";
 import { fetchSavedGrants, saveGrant, unsaveGrant } from "../lib/savedGrants";
 import { fetchSavedGrantsData } from "../lib/savedGrantsData";
 import { AdvancedFilters, FilterOptions } from "./AdvancedFilters";
+import { DashboardSEO } from "./SEO";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
 
@@ -533,7 +534,9 @@ const GrantDashboard = () => {
   }
 
   return (
-    <div className="bg-background dark:bg-background-dark min-h-screen p-6 md:p-8">
+    <>
+      <DashboardSEO />
+      <div className="bg-background dark:bg-background-dark min-h-screen p-6 md:p-8">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -833,6 +836,7 @@ const GrantDashboard = () => {
         )}
       </motion.div>
     </div>
+    </>
   );
 };
 

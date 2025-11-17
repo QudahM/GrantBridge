@@ -12,8 +12,6 @@ const app = express();
 const PORT = process.env.PORT ?? 5000;
 
 // Secure CORS configuration
-// IMPORTANT: These are your FRONTEND domains (Hostinger), not backend (Render)
-// FRONTEND_URL can be comma-separated for multiple domains: https://domain.com,https://www.domain.com
 const allowedOrigins = [
   ...(process.env.FRONTEND_URL?.split(',').map(url => url.trim()) || []),
   // Allow localhost for development
@@ -371,11 +369,28 @@ app.post('/api/grants', sonarLimiter, async (req, res): Promise<any> => {
     };
     const replyContent = sonarData.choices?.[0]?.message?.content ?? '';
 
+    // Check if replyContent is empty or invalid
+    if (!replyContent || replyContent.trim() === '') {
+      console.error('[Grants API] Sonar returned empty response');
+      console.error('[Grants API] This might indicate:');
+      console.error('  1. Sonar API rate limit reached');
+      console.error('  2. Invalid API key');
+      console.error('  3. Sonar service issue');
+      return res.status(500).json({ error: "Sonar API returned empty response. Please try again later." });
+    }
+
     let grants = [];
     try {
       grants = JSON.parse(replyContent);
+      
+      // Validate that grants is an array
+      if (!Array.isArray(grants)) {
+        console.error('[Grants API] Sonar response is not an array:', typeof grants);
+        return res.status(500).json({ error: "Invalid grants data format from Sonar." });
+      }
     } catch (parseError) {
-      console.error('Failed to parse Sonar JSON:', parseError);
+      console.error('[Grants API] Failed to parse Sonar JSON:', parseError);
+      console.error('[Grants API] Raw content:', replyContent.substring(0, 200));
       return res.status(500).json({ error: "Failed to parse grants data from Sonar." });
     }
 

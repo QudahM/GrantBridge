@@ -12,6 +12,7 @@ import { useReducedMotion } from "../marketing/useReducedMotion";
 import { AuroraBackground } from "../effects";
 import { fetchUserProfile } from "../../lib/profile";
 import { isProfileCompleteEnough, toLegacyProfile } from "../../lib/profileMap";
+import { LoginSEO } from "../SEO";
 import {
   Eye,
   EyeOff,
@@ -295,8 +296,10 @@ export const LoginPage = () => {
       };
 
   return (
-    <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-      <AuroraBackground />
+    <>
+      <LoginSEO />
+      <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
+        <AuroraBackground />
 
       <div className="relative z-10 w-full max-w-md px-4">
         <motion.div {...(prefersReducedMotion ? {} : fadeInUp)}>
@@ -673,5 +676,6 @@ export const LoginPage = () => {
         </motion.div>
       </div>
     </div>
+    </>
   );
 };

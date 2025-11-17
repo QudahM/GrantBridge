@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { ArrowLeft, Shield, FileText, Users, Lock, AlertCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { UserNav } from "./ui/UserNav";
+import { TermsSEO } from "./SEO";
 
 export const TermsPage = () => {
   // Scroll to top when component mounts
@@ -12,7 +13,9 @@ export const TermsPage = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 text-white">
+    <>
+      <TermsSEO />
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 text-white">
       {/* User Navigation - Top Right */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -287,5 +290,6 @@ export const TermsPage = () => {
         </div>
       </footer>
     </div>
+    </>
   );
 };

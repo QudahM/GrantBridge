@@ -5,10 +5,13 @@ import { Steps } from "./marketing/Steps";
 import { CtaBanner, SiteFooter } from "./marketing";
 import { UserNav } from "./ui/UserNav";
 import { FloatingElements } from "./effects";
+import { HomeSEO } from "./SEO";
 
 const Home = () => {
   return (
-    <div className="min-h-screen text-white bg-slate-900 relative overflow-hidden">
+    <>
+      <HomeSEO />
+      <div className="min-h-screen text-white bg-slate-900 relative overflow-hidden">
       {/* Floating Elements Background */}
       <div className="fixed inset-0 pointer-events-none z-0">
         <FloatingElements />
@@ -41,6 +44,7 @@ const Home = () => {
       {/* Footer */}
       <SiteFooter />
     </div>
+    </>
   );
 };
 

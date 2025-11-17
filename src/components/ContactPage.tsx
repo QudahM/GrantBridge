@@ -29,6 +29,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { UserNav } from "./ui/UserNav";
 import { useAuth } from "../contexts/AuthContext";
+import { ContactSEO } from "./SEO";
 
 type ContactType = "review" | "suggestion" | "bug" | "support";
 
@@ -126,7 +127,9 @@ export const ContactPage = () => {
   const config = getTypeConfig();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 text-white">
+    <>
+      <ContactSEO />
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 text-white">
       {/* User Navigation - Top Right */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -545,5 +548,6 @@ export const ContactPage = () => {
         </div>
       </footer>
     </div>
+    </>
   );
 };
