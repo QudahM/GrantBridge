@@ -4,7 +4,9 @@ import App from "./App.tsx";
 import "./index.css";
 import { BrowserRouter } from "react-router-dom";
 import { HelmetProvider } from 'react-helmet-async';
+import { initGA } from './lib/analytics';
 
+initGA();
 
 const basename = import.meta.env.BASE_URL;
 

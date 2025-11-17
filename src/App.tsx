@@ -1,5 +1,5 @@
-import { Suspense } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Suspense, useEffect } from "react";
+import { Routes, Route, useLocation } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { LoginPage, ProtectedRoute, ForgotPasswordPage, ResetPasswordPage } from "./components/auth";
 import Home from "./components/home";
@@ -9,8 +9,15 @@ import { UserProfile } from "./components/UserProfile";
 import { FAQPage } from "./components/FAQPage";
 import { TermsPage } from "./components/TermsPage";
 import { ContactPage } from "./components/ContactPage";
+import { trackPageView } from "./lib/analytics";
+import { CookieConsent } from "./components/CookieConsent";
 
 function App() {
+  const location = useLocation();
+  useEffect(() => {
+    trackPageView(location.pathname + location.search);
+  }, [location]);
+
   return (
     <AuthProvider>
       <Suspense fallback={<p>Loading...</p>}>
@@ -48,6 +55,8 @@ function App() {
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/contact" element={<ContactPage />} />
         </Routes>
+        
+        <CookieConsent />
       </Suspense>
     </AuthProvider>
   );

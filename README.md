@@ -85,35 +85,25 @@ grantbridge/
 
 ---
 
-## Getting Started
+## Analytics
 
-### Prerequisites
+GrantBridge includes Google Analytics 4 integration for tracking user behavior and app performance.
 
-- Node.js (v18+ recommended)
-- pnpm or npm
+**Setup:**
+1. Create a Google Analytics 4 property at https://analytics.google.com/
+2. Get your Measurement ID (format: `G-XXXXXXXXXX`)
+3. Add to `.env`: `VITE_GA_MEASUREMENT_ID=G-XXXXXXXXXX`
+4. Rebuild the project
 
-### Installation
+**Tracked Events:**
+- User actions (signup, login, logout)
+- Grant interactions (view, save, search)
+- Application assistant usage
+- Page views and navigation
 
-```bash
-# Clone the repository
-git clone https://github.com/qudahm/grantbridge.git
-cd grantbridge
-
-# Install dependencies
-pnpm install
-
-# Run development server
-pnpm dev
-```
 
 ---
 
 ## Contact
 
 Created by [@qudahm](https://github.com/qudahm) – feel free to reach out!
-
----
-
-## License
-
-- This project is open source under the MIT License.

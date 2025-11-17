@@ -24,6 +24,7 @@ import { fetchSavedGrants, saveGrant, unsaveGrant } from "../lib/savedGrants";
 import { fetchSavedGrantsData } from "../lib/savedGrantsData";
 import { AdvancedFilters, FilterOptions } from "./AdvancedFilters";
 import { DashboardSEO } from "./SEO";
+import { analytics } from "../lib/analytics";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
 
@@ -305,6 +306,9 @@ const GrantDashboard = () => {
             setSavedGrantsData((prev) => [...prev, grantData]);
           }
           console.error('[Dashboard] Failed to remove saved grant');
+        } else {
+          // Track unsave event
+          analytics.unsaveGrant(grantData?.title || grantId);
         }
       } else {
         console.log('[Dashboard] Saving grant:', grantId);
@@ -314,6 +318,8 @@ const GrantDashboard = () => {
           setSavedGrants((prev) => prev.filter((id) => id !== grantId));
           setSavedGrantsData((prev) => prev.filter((g) => g.id !== grantId));
           console.error('[Dashboard] Failed to save grant');
+        } else {
+          analytics.saveGrant(grantData?.title || grantId);
         }
       }
     } catch (error) {
@@ -335,6 +341,7 @@ const GrantDashboard = () => {
   const handleOpenAssistant = (grant: Grant) => {
     setSelectedGrant(grant);
     setShowAssistant(true);
+    analytics.openAssistant(grant.title);
   };
 
   const handleNewGrants = () => {

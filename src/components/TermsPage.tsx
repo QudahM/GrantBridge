@@ -156,6 +156,97 @@ export const TermsPage = () => {
               </CardContent>
             </Card>
 
+            {/* Analytics & Cookies */}
+            <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700/50">
+              <CardContent className="p-8">
+                <div className="flex items-start gap-4">
+                  <div className="p-2 bg-cyan-600/20 rounded-lg">
+                    <Lock size={24} className="text-cyan-400" />
+                  </div>
+                  <div className="flex-1">
+                    <h2 className="text-2xl font-bold text-white mb-4">4. Analytics & Cookies</h2>
+                    <div className="space-y-4 text-slate-300 leading-relaxed">
+                      <div>
+                        <p className="font-semibold text-white mb-2">Google Analytics</p>
+                        <p>
+                          We use Google Analytics to understand how visitors interact with our website. This helps us improve our service and user experience.
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="font-semibold text-white mb-2">Data Collected by Google Analytics:</p>
+                        <ul className="list-disc list-inside space-y-1 ml-4">
+                          <li>Pages you visit and time spent on each page</li>
+                          <li>How you arrived at our site (search engine, direct link, etc.)</li>
+                          <li>Your approximate geographic location (city/country level)</li>
+                          <li>Device type, browser, and operating system</li>
+                          <li>User interactions (button clicks, form submissions, navigation)</li>
+                          <li>Anonymized IP address (we enable IP anonymization)</li>
+                        </ul>
+                      </div>
+
+                      <div>
+                        <p className="font-semibold text-white mb-2">What We Don't Collect:</p>
+                        <ul className="list-disc list-inside space-y-1 ml-4">
+                          <li>Your name, email, or other personally identifiable information through analytics</li>
+                          <li>Sensitive personal data (financial information, health data, etc.)</li>
+                          <li>Your exact IP address (anonymized for privacy)</li>
+                        </ul>
+                      </div>
+
+                      <div>
+                        <p className="font-semibold text-white mb-2">Cookies</p>
+                        <p>
+                          Google Analytics uses cookies to track your session and understand your behavior across visits. These cookies do not contain personal information and are used solely for analytics purposes.
+                        </p>
+                      </div>
+
+                      <div>
+                        <p className="font-semibold text-white mb-2">Your Privacy Choices:</p>
+                        <ul className="list-disc list-inside space-y-1 ml-4">
+                          <li>You can opt out of Google Analytics by installing the{" "}
+                            <a 
+                              href="https://tools.google.com/dlpage/gaoptout" 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="text-cyan-400 hover:text-cyan-300 underline"
+                            >
+                              Google Analytics Opt-out Browser Add-on
+                            </a>
+                          </li>
+                          <li>You can disable cookies in your browser settings</li>
+                          <li>You can use private/incognito browsing mode</li>
+                        </ul>
+                      </div>
+
+                      <div className="pt-3 border-t border-slate-700">
+                        <p className="text-sm">
+                          For more information about how Google collects and processes data, please review{" "}
+                          <a 
+                            href="https://policies.google.com/privacy" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-cyan-400 hover:text-cyan-300 underline font-medium"
+                          >
+                            Google's Privacy Policy
+                          </a>
+                          {" "}and{" "}
+                          <a 
+                            href="https://support.google.com/analytics/answer/6004245" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-cyan-400 hover:text-cyan-300 underline font-medium"
+                          >
+                            How Google uses data when you use our partners' sites or apps
+                          </a>.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Acceptable Use */}
             <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700/50">
               <CardContent className="p-8">
@@ -164,7 +255,7 @@ export const TermsPage = () => {
                     <AlertCircle size={24} className="text-amber-400" />
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-2xl font-bold text-white mb-4">4. Acceptable Use</h2>
+                    <h2 className="text-2xl font-bold text-white mb-4">5. Acceptable Use</h2>
                     <div className="space-y-3 text-slate-300 leading-relaxed">
                       <p>You agree NOT to:</p>
                       <ul className="list-disc list-inside space-y-2 ml-4">
@@ -189,7 +280,7 @@ export const TermsPage = () => {
                     <Shield size={24} className="text-pink-400" />
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-2xl font-bold text-white mb-4">5. Intellectual Property</h2>
+                    <h2 className="text-2xl font-bold text-white mb-4">6. Intellectual Property</h2>
                     <div className="space-y-3 text-slate-300 leading-relaxed">
                       <p>All content on GrantBridge, including text, graphics, logos, and software, is owned by GrantBridge or its licensors and protected by copyright and trademark laws.</p>
                       <p>You may not reproduce, distribute, or create derivative works without our explicit permission.</p>
@@ -207,7 +298,7 @@ export const TermsPage = () => {
                     <AlertCircle size={24} className="text-red-400" />
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-2xl font-bold text-white mb-4">6. Disclaimers & Limitations</h2>
+                    <h2 className="text-2xl font-bold text-white mb-4">7. Disclaimers & Limitations</h2>
                     <div className="space-y-3 text-slate-300 leading-relaxed">
                       <p><strong className="text-white">No Guarantee:</strong> We do not guarantee that you will receive any grant or funding. Grant decisions are made by the grant providers, not GrantBridge.</p>
                       <p><strong className="text-white">Accuracy:</strong> While we strive for accuracy, we cannot guarantee that all grant information is current or complete. Always verify details with the grant provider.</p>
@@ -222,7 +313,7 @@ export const TermsPage = () => {
             {/* Changes to Terms */}
             <Card className="bg-slate-800/80 backdrop-blur-sm border-slate-700/50">
               <CardContent className="p-8">
-                <h2 className="text-2xl font-bold text-white mb-4">7. Changes to Terms</h2>
+                <h2 className="text-2xl font-bold text-white mb-4">8. Changes to Terms</h2>
                 <p className="text-slate-300 leading-relaxed">
                   We may update these Terms of Service from time to time. We'll notify you of significant changes via email or through the platform. Continued use of GrantBridge after changes constitutes acceptance of the new terms.
                 </p>

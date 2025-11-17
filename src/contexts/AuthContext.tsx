@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
 import { User, Session, AuthError } from '@supabase/supabase-js'
 import { supabase } from '../lib/supabase'
+import { analytics } from '../lib/analytics'
 
 interface AuthContextType {
   user: User | null
@@ -62,6 +63,11 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         captchaToken
       }
     })
+    
+    if (!error) {
+      analytics.signUp();
+    }
+    
     return { error }
   }
 
@@ -73,11 +79,21 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         captchaToken
       }
     })
+    
+    if (!error) {
+      analytics.login();
+    }
+    
     return { error }
   }
 
   const signOut = async () => {
     const { error } = await supabase.auth.signOut()
+    
+    if (!error) {
+      analytics.logout();
+    }
+    
     return { error }
   }
 
