@@ -31,14 +31,16 @@ export const fetchSavedGrants = async (userId: string): Promise<string[]> => {
 
 /**
  * Save a grant for a user
+ * Now also stores the full grant data in saved_grants table
  */
-export const saveGrant = async (userId: string, grantId: string): Promise<boolean> => {
+export const saveGrant = async (userId: string, grantId: string, grantData?: any): Promise<boolean> => {
   try {
     const { error } = await supabase
       .from('saved_grants')
       .insert({
         user_id: userId,
         grant_id: grantId,
+        grant_data: grantData || null, // Store full grant data as JSONB
       });
 
     if (error) {

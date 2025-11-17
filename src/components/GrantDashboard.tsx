@@ -21,6 +21,8 @@ import { useAuth } from "../contexts/AuthContext";
 import { fetchUserProfile } from "../lib/profile";
 import { toLegacyProfile } from "../lib/profileMap";
 import { fetchSavedGrants, saveGrant, unsaveGrant } from "../lib/savedGrants";
+import { fetchSavedGrantsData } from "../lib/savedGrantsData";
+import { AdvancedFilters, FilterOptions } from "./AdvancedFilters";
 
 const BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:5000";
 
@@ -66,15 +68,23 @@ const GrantDashboard = () => {
     location.state as UserProfile
   );
   const [grants, setGrants] = useState<Grant[]>([]);
+  const [savedGrantsData, setSavedGrantsData] = useState<Grant[]>([]); // Full grant data for saved grants
   const [selectedGrant, setSelectedGrant] = useState<Grant | null>(null);
   const [showAssistant, setShowAssistant] = useState(false);
   const [sortBy, setSortBy] = useState("deadline");
-  const [savedGrants, setSavedGrants] = useState<string[]>([]);
+  const [savedGrants, setSavedGrants] = useState<string[]>([]); // Just IDs
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
   const [loading, setLoading] = useState(true);
   const [profileLoading, setProfileLoading] = useState(!location.state);
   const [savedGrantsLoading, setSavedGrantsLoading] = useState(true);
+  const [filters, setFilters] = useState<FilterOptions>({
+    amountMin: 0,
+    amountMax: 100000,
+    deadlineRange: "all",
+    eligibilityCriteria: [],
+    difficulty: [],
+  });
 
   // Load user profile if not provided via location.state
   useEffect(() => {
@@ -132,15 +142,22 @@ const GrantDashboard = () => {
 
     const fetchGrants = async () => {
       console.log("[Dashboard] Fetching grants with profile:", userProfile);
-      console.log("[Dashboard] API URL:");
+      console.log("[Dashboard] API URL:", BASE_URL);
       try {
         setLoading(true);
+        
+        // Add timeout to fetch
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        
         const response = await fetch(`${BASE_URL}/api/grants`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(userProfile),
+          signal: controller.signal,
         });
 
+        clearTimeout(timeoutId);
         console.log("[Dashboard] Response status:", response.status);
 
         if (!response.ok) {
@@ -185,8 +202,13 @@ const GrantDashboard = () => {
           console.error("[Dashboard] Expected array, got:", typeof data);
           setGrants([]);
         }
-      } catch (error) {
-        console.error("[Dashboard] Failed to fetch grants:", error);
+      } catch (error: any) {
+        if (error.name === 'AbortError') {
+          console.error("[Dashboard] Request timed out after 30 seconds");
+          console.error("[Dashboard] Backend might be down or not responding");
+        } else {
+          console.error("[Dashboard] Failed to fetch grants:", error);
+        }
         setGrants([]);
       } finally {
         setLoading(false);
@@ -214,9 +236,28 @@ const GrantDashboard = () => {
       try {
         console.log('[Dashboard] Loading saved grants for user:', user.id);
         setSavedGrantsLoading(true);
-        const saved = await fetchSavedGrants(user.id);
-        console.log('[Dashboard] Loaded saved grants:', saved);
-        setSavedGrants(saved);
+        
+        // Load saved grant IDs
+        const savedIds = await fetchSavedGrants(user.id);
+        console.log('[Dashboard] Loaded saved grant IDs:', savedIds);
+        console.log('[Dashboard] Number of saved IDs:', savedIds.length);
+        setSavedGrants(savedIds);
+
+        // Load full grant data for saved grants
+        const savedData = await fetchSavedGrantsData(user.id);
+        console.log('[Dashboard] Loaded saved grants data:', savedData);
+        console.log('[Dashboard] Number of saved grants with data:', savedData.length);
+        
+        if (savedIds.length > 0 && savedData.length === 0) {
+          console.error('[Dashboard] ⚠️ MISMATCH: Have saved IDs but no grant data!');
+          console.error('[Dashboard] This likely means:');
+          console.error('[Dashboard] 1. The grant_data column does not exist in saved_grants table');
+          console.error('[Dashboard] 2. OR grants were saved before grant_data column was added');
+          console.error('[Dashboard] 3. OR grants are not in grants_cache table');
+          console.error('[Dashboard] Solution: Run the SQL migration and re-save your grants');
+        }
+        
+        setSavedGrantsData(savedData);
       } catch (error) {
         console.error('[Dashboard] Error loading saved grants:', error);
       } finally {
@@ -235,12 +276,22 @@ const GrantDashboard = () => {
 
     const isSaved = savedGrants.includes(grantId);
     
-    // Optimistic update
+    // Find the grant data to add/remove from savedGrantsData
+    const grantData = [...grants, ...savedGrantsData].find(g => g.id === grantId);
+    
+    // Optimistic update for IDs
     setSavedGrants((prev) =>
       isSaved
         ? prev.filter((id) => id !== grantId)
         : [...prev, grantId]
     );
+
+    // Optimistic update for full data
+    if (isSaved) {
+      setSavedGrantsData((prev) => prev.filter((g) => g.id !== grantId));
+    } else if (grantData) {
+      setSavedGrantsData((prev) => [...prev, grantData]);
+    }
 
     try {
       if (isSaved) {
@@ -249,14 +300,18 @@ const GrantDashboard = () => {
         if (!success) {
           // Revert on failure
           setSavedGrants((prev) => [...prev, grantId]);
+          if (grantData) {
+            setSavedGrantsData((prev) => [...prev, grantData]);
+          }
           console.error('[Dashboard] Failed to remove saved grant');
         }
       } else {
         console.log('[Dashboard] Saving grant:', grantId);
-        const success = await saveGrant(user.id, grantId);
+        const success = await saveGrant(user.id, grantId, grantData);
         if (!success) {
           // Revert on failure
           setSavedGrants((prev) => prev.filter((id) => id !== grantId));
+          setSavedGrantsData((prev) => prev.filter((g) => g.id !== grantId));
           console.error('[Dashboard] Failed to save grant');
         }
       }
@@ -268,6 +323,11 @@ const GrantDashboard = () => {
           ? [...prev, grantId]
           : prev.filter((id) => id !== grantId)
       );
+      if (isSaved && grantData) {
+        setSavedGrantsData((prev) => [...prev, grantData]);
+      } else {
+        setSavedGrantsData((prev) => prev.filter((g) => g.id !== grantId));
+      }
     }
   };
 
@@ -280,60 +340,123 @@ const GrantDashboard = () => {
     navigate("/onboarding");
   };
 
-  const filteredGrants = grants
+  // Extract unique eligibility criteria from all grants (including saved)
+  const availableEligibility = Array.from(
+    new Set(
+      [...grants, ...savedGrantsData].flatMap((grant) => grant.eligibility)
+    )
+  ).sort();
+
+  // Parse amount from grant string
+  const parseGrantAmount = (amountStr: string): number => {
+    if (!amountStr) return 0;
+    const match = amountStr.replace(/,/g, "").match(/\d+/);
+    return match ? parseInt(match[0], 10) : 0;
+  };
+
+  // Check if deadline is within range
+  const isWithinDeadlineRange = (deadline: string, range: string): boolean => {
+    if (range === "all") return true;
+    
+    const daysUntil = getDaysUntil(deadline);
+    if (isNaN(daysUntil) || daysUntil < 0) return false;
+
+    switch (range) {
+      case "week": return daysUntil <= 7;
+      case "month": return daysUntil <= 30;
+      case "3months": return daysUntil <= 90;
+      case "6months": return daysUntil <= 180;
+      default: return true;
+    }
+  };
+
+  // Use different grant sources based on active tab
+  const sourceGrants = activeTab === "saved" ? savedGrantsData : grants;
+
+  // Debug logging
+  console.log('[Dashboard] Active tab:', activeTab);
+  console.log('[Dashboard] Source grants count:', sourceGrants.length);
+  console.log('[Dashboard] Filters:', filters);
+
+  const filteredGrants = sourceGrants
     .filter((grant) => {
+      // Search query filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase();
-        return (
-          grant.title.toLowerCase().includes(query) ||
-          grant.organization.toLowerCase().includes(query) ||
-          grant.description.toLowerCase().includes(query) ||
-          grant.tags.some((tag) => tag.toLowerCase().includes(query))
+        const matchesSearch = (
+          grant.title?.toLowerCase().includes(query) ||
+          grant.organization?.toLowerCase().includes(query) ||
+          grant.description?.toLowerCase().includes(query) ||
+          (grant.tags && grant.tags.some((tag) => tag.toLowerCase().includes(query)))
         );
+        if (!matchesSearch) return false;
       }
-      if (activeTab === "saved") return savedGrants.includes(grant.id);
+
+      // Amount range filter
+      const grantAmount = parseGrantAmount(grant.amount);
+      if (grantAmount < filters.amountMin || grantAmount > filters.amountMax) {
+        return false;
+      }
+
+      // Deadline range filter
+      if (!isWithinDeadlineRange(grant.deadline, filters.deadlineRange)) {
+        return false;
+      }
+
+      // Difficulty filter
+      if (filters.difficulty.length > 0 && grant.difficulty && !filters.difficulty.includes(grant.difficulty)) {
+        return false;
+      }
+
+      // Eligibility criteria filter
+      if (filters.eligibilityCriteria.length > 0 && grant.eligibility) {
+        const hasMatchingEligibility = filters.eligibilityCriteria.some((criterion) =>
+          grant.eligibility.some((e) => e.toLowerCase().includes(criterion.toLowerCase()))
+        );
+        if (!hasMatchingEligibility) return false;
+      }
+
       return true;
     })
     .sort((a, b) => {
+      if (sortBy === "relevance") {
+        // Relevance = match percentage + deadline urgency + amount
+        const matchA = calculateMatchPercentage(userProfile, a);
+        const matchB = calculateMatchPercentage(userProfile, b);
+        
+        const daysA = getDaysUntil(a.deadline);
+        const daysB = getDaysUntil(b.deadline);
+        const urgencyA = isNaN(daysA) || daysA < 0 ? 0 : Math.max(0, 100 - daysA);
+        const urgencyB = isNaN(daysB) || daysB < 0 ? 0 : Math.max(0, 100 - daysB);
+        
+        const amountA = parseGrantAmount(a.amount);
+        const amountB = parseGrantAmount(b.amount);
+        const amountScoreA = Math.min(100, (amountA / 1000));
+        const amountScoreB = Math.min(100, (amountB / 1000));
+        
+        const relevanceA = (matchA * 0.5) + (urgencyA * 0.3) + (amountScoreA * 0.2);
+        const relevanceB = (matchB * 0.5) + (urgencyB * 0.3) + (amountScoreB * 0.2);
+        
+        return relevanceB - relevanceA;
+      }
+
       if (sortBy === "deadline") {
         const aDays = getDaysUntil(a.deadline);
         const bDays = getDaysUntil(b.deadline);
 
-        // 1. If both are NaN, treat them equal
         if (isNaN(aDays) && isNaN(bDays)) return 0;
-
-        // 2. If one is NaN, prioritize NaN over expired grants but after upcoming ones
-        if (isNaN(aDays)) {
-          return bDays < 0 ? -1 : 1; // If b is expired, a(NaN) comes first; if b is upcoming, b comes first
-        }
-        if (isNaN(bDays)) {
-          return aDays < 0 ? 1 : -1; // If a is expired, b(NaN) comes first; if a is upcoming, a comes first
-        }
-
-        // 3. Now both are numbers (not NaN)
-        // If one is expired (<0) and one is upcoming (>0)
+        if (isNaN(aDays)) return bDays < 0 ? -1 : 1;
+        if (isNaN(bDays)) return aDays < 0 ? 1 : -1;
         if (aDays < 0 && bDays >= 0) return 1;
         if (bDays < 0 && aDays >= 0) return -1;
-
-        if (aDays < 0 && bDays < 0) return bDays - aDays; // Both are expired, sort by days remaining (ascending)
-
-        // 4. Otherwise normal ascending sort
+        if (aDays < 0 && bDays < 0) return bDays - aDays;
         return aDays - bDays;
       }
 
-      const parseAmount = (amountStr: string): number => {
-        if (!amountStr) return 0;
-        const match = amountStr.replace(/,/g, "").match(/\d+/);
-        if (match) {
-          return parseInt(match[0], 10);
-        }
-        return 0;
-      };
-
       if (sortBy === "amount") {
-        const amountA = parseAmount(a.amount);
-        const amountB = parseAmount(b.amount);
-        return amountB - amountA; // Higher amount first
+        const amountA = parseGrantAmount(a.amount);
+        const amountB = parseGrantAmount(b.amount);
+        return amountB - amountA;
       }
 
       if (sortBy === "match") {
@@ -430,65 +553,102 @@ const GrantDashboard = () => {
           </Button>
         </div>
 
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground">
-              Your Grant Dashboard
-            </h1>
-            <p className="text-muted-foreground mt-2">{userSummary}</p>
-          </div>
-          <div className="flex items-center gap-3 w-full md:w-auto">
-            <div className="relative w-full md:w-64">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search grants..."
-                className="pl-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+        {/* Header Section */}
+        <div className="mb-8 space-y-6">
+          {/* Title and Summary */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">
+                Your Grant Dashboard
+              </h1>
+              <p className="text-muted-foreground mt-2">{userSummary}</p>
             </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <Filter className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem
-                  onClick={() => setSortBy("deadline")}
-                  className={
-                    sortBy === "deadline"
-                      ? "bg-primary text-primary-foreground"
-                      : ""
-                  }
-                >
-                  Sort by Deadline
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setSortBy("amount")}
-                  className={
-                    sortBy === "amount"
-                      ? "bg-primary text-primary-foreground"
-                      : ""
-                  }
-                >
-                  Sort by Amount
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => setSortBy("match")}
-                  className={
-                    sortBy === "match"
-                      ? "bg-primary text-primary-foreground"
-                      : ""
-                  }
-                >
-                  Sort by Relevance
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <div className="hidden md:block w-px h-8 bg-border" />
-            <DarkModeToggle />
-            <UserNav />
+            <div className="flex items-center gap-3">
+              <DarkModeToggle />
+              <UserNav />
+            </div>
+          </div>
+
+          {/* Search Bar - Full Width */}
+          <div className="relative w-full">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+            <Input
+              placeholder="Search grants by title, organization, description, or tags..."
+              className="pl-10 h-12 text-base"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+          </div>
+
+          {/* Filters and Sort Controls */}
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            {/* Left Side - Sort Controls */}
+            <div className="flex items-center gap-3">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <Filter className="h-4 w-4" />
+                    Sort
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="start">
+                  <DropdownMenuItem
+                    onClick={() => setSortBy("relevance")}
+                    className={
+                      sortBy === "relevance"
+                        ? "bg-primary text-primary-foreground"
+                        : ""
+                    }
+                  >
+                    Sort by Relevance
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setSortBy("deadline")}
+                    className={
+                      sortBy === "deadline"
+                        ? "bg-primary text-primary-foreground"
+                        : ""
+                    }
+                  >
+                    Sort by Deadline
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setSortBy("amount")}
+                    className={
+                      sortBy === "amount"
+                        ? "bg-primary text-primary-foreground"
+                        : ""
+                    }
+                  >
+                    Sort by Amount
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => setSortBy("match")}
+                    className={
+                      sortBy === "match"
+                        ? "bg-primary text-primary-foreground"
+                        : ""
+                    }
+                  >
+                    Sort by Match %
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              
+              {/* Active Sort Indicator */}
+              {sortBy !== "deadline" && (
+                <Badge variant="secondary" className="capitalize">
+                  Sorted by: {sortBy === "match" ? "Match %" : sortBy}
+                </Badge>
+              )}
+            </div>
+
+            {/* Right Side - Advanced Filters */}
+            <AdvancedFilters
+              filters={filters}
+              onFiltersChange={setFilters}
+              availableEligibility={availableEligibility}
+            />
           </div>
         </div>
 
@@ -518,7 +678,14 @@ const GrantDashboard = () => {
                 </TabsList>
 
                 <TabsContent value="all">
-                  {filteredGrants.length > 0 ? (
+                  {grants.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mx-auto mb-4" />
+                      <p className="text-muted-foreground text-lg">
+                        Loading grants from backend...
+                      </p>
+                    </div>
+                  ) : filteredGrants.length > 0 ? (
                     <>
                       {renderGrantCards()}
                       <div className="flex justify-center mt-8">
@@ -532,12 +699,24 @@ const GrantDashboard = () => {
                       <p className="text-muted-foreground text-lg">
                         No grants match your current filters.
                       </p>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Total grants available: {grants.length}
+                      </p>
                       <Button
                         variant="outline"
                         className="mt-4"
-                        onClick={() => setSearchQuery("")}
+                        onClick={() => {
+                          setSearchQuery("");
+                          setFilters({
+                            amountMin: 0,
+                            amountMax: 100000,
+                            deadlineRange: "all",
+                            eligibilityCriteria: [],
+                            difficulty: [],
+                          });
+                        }}
                       >
-                        Clear filters
+                        Clear All Filters
                       </Button>
                       <Button
                         variant="outline"
@@ -551,8 +730,69 @@ const GrantDashboard = () => {
                 </TabsContent>
 
                 <TabsContent value="saved">
-                  {savedGrants.length > 0 ? (
-                    renderGrantCards()
+                  {savedGrantsLoading ? (
+                    <div className="text-center py-12">
+                      <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mx-auto mb-4" />
+                      <p className="text-muted-foreground text-lg">
+                        Loading saved grants...
+                      </p>
+                    </div>
+                  ) : savedGrantsData.length > 0 ? (
+                    filteredGrants.length > 0 ? (
+                      renderGrantCards()
+                    ) : (
+                      <div className="text-center py-12">
+                        <p className="text-muted-foreground text-lg">
+                          No saved grants match your current filters.
+                        </p>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Total saved grants: {savedGrantsData.length}
+                        </p>
+                        <Button
+                          variant="outline"
+                          className="mt-4"
+                          onClick={() => {
+                            setSearchQuery("");
+                            setFilters({
+                              amountMin: 0,
+                              amountMax: 100000,
+                              deadlineRange: "all",
+                              eligibilityCriteria: [],
+                              difficulty: [],
+                            });
+                          }}
+                        >
+                          Clear All Filters
+                        </Button>
+                      </div>
+                    )
+                  ) : savedGrants.length > 0 ? (
+                    <div className="text-center py-12">
+                      <BookmarkCheck className="h-12 w-12 mx-auto text-amber-500 mb-4" />
+                      <p className="text-muted-foreground text-lg font-semibold">
+                        Saved Grants Need Migration
+                      </p>
+                      <p className="text-muted-foreground mt-2 max-w-md mx-auto">
+                        You have {savedGrants.length} saved grant(s), but they need to be updated to the new format.
+                      </p>
+                      <div className="mt-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-lg max-w-lg mx-auto text-left">
+                        <p className="text-sm text-muted-foreground mb-2">
+                          <strong>To fix this:</strong>
+                        </p>
+                        <ol className="text-sm text-muted-foreground space-y-1 list-decimal list-inside">
+                          <li>Run the SQL migration in Supabase (see SUPABASE_SAVED_GRANTS_UPDATE.md)</li>
+                          <li>Go to "All Grants" tab</li>
+                          <li>Find and re-save your grants</li>
+                        </ol>
+                      </div>
+                      <Button
+                        variant="outline"
+                        className="mt-6"
+                        onClick={() => setActiveTab("all")}
+                      >
+                        Go to All Grants
+                      </Button>
+                    </div>
                   ) : (
                     <div className="text-center py-12">
                       <BookmarkCheck className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
