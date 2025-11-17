@@ -76,6 +76,26 @@ const syncLimiter = rateLimit({
 // Apply general rate limiting to all API routes
 app.use('/api/', generalLimiter);
 
+// Admin authentication middleware
+const adminAuth = (req: express.Request, res: express.Response, next: express.NextFunction): any => {
+  const authHeader = req.headers.authorization;
+  const adminSecret = process.env.ADMIN_SECRET;
+
+  // If no admin secret is configured, log warning but allow (for backward compatibility)
+  if (!adminSecret) {
+    console.warn('[Security] ADMIN_SECRET not configured - admin endpoints are unprotected!');
+    return next();
+  }
+
+  // Check if authorization header matches
+  if (authHeader !== `Bearer ${adminSecret}`) {
+    console.warn('[Security] Unauthorized admin access attempt');
+    return res.status(401).json({ error: 'Unauthorized - Invalid admin credentials' });
+  }
+
+  next();
+};
+
 // Health check endpoint
 app.get('/api/health', (_req, res) => {
   res.json({
@@ -105,7 +125,8 @@ console.log('[Server] Grants sync cron job scheduled (every 7 days at 2 AM)');
 
 // Manual sync endpoint for testing/admin use
 // Rate limited to 1 request per hour
-app.post('/api/sync-grants', syncLimiter, async (req, res): Promise<any> => {
+// Protected with admin authentication
+app.post('/api/sync-grants', adminAuth, syncLimiter, async (req, res): Promise<any> => {
   try {
     console.log('[API] Manual grants sync triggered');
     await syncGrantsToSupabase();
@@ -422,13 +443,30 @@ app.post("/api/sonar", async (req, res): Promise<any> => {
   }
 });
 
+// Cache for requirement descriptions to ensure consistency
+const requirementDescriptionsCache = new Map<string, string[]>();
+
+// Cache for grant explanations to ensure consistency
+const grantExplanationsCache = new Map<string, { criteria: string[], unique: string }>();
+
 // NEW: Requirement Descriptions Endpoint
 app.post("/api/requirement-descriptions", async (req, res): Promise<any> => {
-  const { requirements } = req.body;
+  const { requirements, grantTitle } = req.body;
 
   if (!Array.isArray(requirements) || requirements.length === 0) {
     return res.status(400).json({ error: "Invalid or missing requirements array." });
   }
+
+  // Create a cache key from requirements
+  const cacheKey = requirements.map(r => r.trim().toLowerCase()).sort().join('||');
+  
+  // Check cache first
+  if (requirementDescriptionsCache.has(cacheKey)) {
+    console.log('[API] Returning cached requirement descriptions');
+    return res.json({ descriptions: requirementDescriptionsCache.get(cacheKey) });
+  }
+
+  console.log('[API] Generating new requirement descriptions for:', grantTitle || 'unknown grant');
 
   const prompt = `
 For each of the following grant application requirements, write a 5-8 words description (no longer than 10 words) that clearly explains what it is and how to fulfill it.
@@ -482,11 +520,20 @@ Respond in JSON format:
         throw new Error("Parsed data does not contain 'descriptions' array.");
       }
 
+      // Cache the descriptions for future requests
+      requirementDescriptionsCache.set(cacheKey, parsed.descriptions);
+      console.log('[API] Cached requirement descriptions for future use');
+
       return res.json(parsed);
     } catch (err) {
       console.error("JSON parsing error in Sonar response:", err);
+      const fallbackDescriptions = requirements.map(() => "Description not available.");
+      
+      // Cache even the fallback to avoid repeated API calls
+      requirementDescriptionsCache.set(cacheKey, fallbackDescriptions);
+      
       return res.status(200).json({
-        descriptions: requirements.map(() => "Description not available."),
+        descriptions: fallbackDescriptions,
       });
     }
 
@@ -502,6 +549,17 @@ app.post("/api/explain-grant", async (req, res): Promise<any> => {
   if (!title || !Array.isArray(requirements)) {
     return res.status(400).json({ error: "Missing or invalid grant data." });
   }
+
+  // Create cache key from title (normalized)
+  const cacheKey = title.trim().toLowerCase();
+  
+  // Check cache first
+  if (grantExplanationsCache.has(cacheKey)) {
+    console.log('[API] Returning cached grant explanation for:', title);
+    return res.json(grantExplanationsCache.get(cacheKey));
+  }
+
+  console.log('[API] Generating new grant explanation for:', title);
 
   const prompt = `
 You are a scholarship evaluator assistant. Based on the following information:
@@ -566,14 +624,23 @@ Respond in strict JSON format like:
           .map((str: string) => `• ${str}`);
       }
 
+      // Cache the explanation for future requests
+      grantExplanationsCache.set(cacheKey, parsed);
+      console.log('[API] Cached grant explanation for future use');
+
       return res.json(parsed);
 
     } catch (error) {
       console.error("Sonar explanation JSON parse error:", error);
-      return res.status(200).json({
-        criteria: "We're unable to extract selection criteria at this time.",
+      const fallbackResponse = {
+        criteria: ["We're unable to extract selection criteria at this time."],
         unique: "The explanation could not be retrieved. Please try refreshing.",
-      });
+      };
+      
+      // Cache even the fallback to avoid repeated API calls
+      grantExplanationsCache.set(cacheKey, fallbackResponse);
+      
+      return res.status(200).json(fallbackResponse);
     }
   } catch (error) {
     console.error("Sonar grant explanation error:", error);

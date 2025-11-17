@@ -35,6 +35,10 @@ interface ApplicationAssistantProps {
 
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
+// Module-level cache that persists across component mounts/unmounts
+const grantExplanationCache = new Map<string, { criteria: any, unique: string }>();
+const requirementDescriptionCache = new Map<string, string[]>();
+
 const ApplicationAssistant = ({
   isOpen = true,
   onClose = () => { },
@@ -64,16 +68,45 @@ const ApplicationAssistant = ({
   const [isAsking, setIsAsking] = useState(false);
   const [showChatInput, setShowChatInput] = useState(false);
   const [chatHistory, setChatHistory] = useState<{ question: string; answer: string }[]>([]);
-  const [isLoadingDescriptions, setIsLoadingDescriptions] = useState(false);
+  const [isLoadingDescriptions, setIsLoadingDescriptions] = useState(true); // Start as true to prevent flash
+  const fetchingRef = React.useRef(false); // Track if fetch is in progress
+  const fetchingExplanationRef = React.useRef(false); // Track if explanation fetch is in progress
 
   const getStableRequirementsKey = (reqs: string[]) =>
     reqs.map(r => r.trim().toLowerCase()).sort().join("||");
 
   React.useEffect(() => {
-    if (!grantTitle || grantTitle === lastFetchedTitle) return;
+    if (!grantTitle) return;
+
+    const cacheKey = grantTitle.trim().toLowerCase();
+
+    // Check module-level cache first (persists across component mounts)
+    if (grantExplanationCache.has(cacheKey)) {
+      console.log('[ApplicationAssistant] Using module-level cached explanation for:', grantTitle);
+      const cached = grantExplanationCache.get(cacheKey)!;
+      setGrantCriteria(cached.criteria);
+      setGrantUniqueFactor(cached.unique);
+      setLastFetchedTitle(grantTitle);
+      return;
+    }
+
+    // Check if already fetched in this component instance
+    if (grantTitle === lastFetchedTitle) {
+      console.log('[ApplicationAssistant] Already fetched in this session:', grantTitle);
+      return;
+    }
+
+    // Prevent multiple simultaneous fetches
+    if (fetchingExplanationRef.current) {
+      console.log('[ApplicationAssistant] Explanation fetch already in progress, skipping');
+      return;
+    }
 
     const fetchGrantExplanation = async () => {
+      fetchingExplanationRef.current = true;
+      
       try {
+        console.log('[ApplicationAssistant] Fetching grant explanation for:', grantTitle);
         const res = await fetch(`${BASE_URL}/api/explain-grant`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -81,11 +114,21 @@ const ApplicationAssistant = ({
         });
 
         const data = await res.json();
+        console.log('[ApplicationAssistant] Received grant explanation, caching it');
+        
+        // Store in module-level cache
+        grantExplanationCache.set(cacheKey, {
+          criteria: data.criteria,
+          unique: data.unique
+        });
+        
         setGrantCriteria(data.criteria);
         setGrantUniqueFactor(data.unique);
         setLastFetchedTitle(grantTitle);
       } catch (err) {
         console.error("Failed to fetch grant explanation", err);
+      } finally {
+        fetchingExplanationRef.current = false;
       }
     };
 
@@ -94,25 +137,65 @@ const ApplicationAssistant = ({
 
   React.useEffect(() => {
     const reqKey = `${grantTitle?.trim().toLowerCase()}::${getStableRequirementsKey(grantRequirements)}`;
-    if (reqKey === lastFetchedRequirements) return;
+    
+    // Check module-level cache first (persists across component mounts)
+    if (requirementDescriptionCache.has(reqKey)) {
+      console.log('[ApplicationAssistant] Using module-level cached descriptions for:', reqKey);
+      setRequirementDescriptions(requirementDescriptionCache.get(reqKey)!);
+      setIsLoadingDescriptions(false);
+      setLastFetchedRequirements(reqKey);
+      return;
+    }
+
+    // Check if already fetched in this component instance
+    if (reqKey === lastFetchedRequirements) {
+      console.log('[ApplicationAssistant] Already fetched in this session:', reqKey);
+      setIsLoadingDescriptions(false);
+      return;
+    }
+
+    // Prevent multiple simultaneous fetches
+    if (fetchingRef.current) {
+      console.log('[ApplicationAssistant] Fetch already in progress, skipping');
+      return;
+    }
 
     const fetchDescriptions = async () => {
+      fetchingRef.current = true;
+      
+      // Clear old descriptions immediately to prevent showing stale data
+      setRequirementDescriptions([]);
       setIsLoadingDescriptions(true);
+      
       try {
+        console.log('[ApplicationAssistant] Fetching descriptions for:', grantTitle);
         const res = await fetch(`${BASE_URL}/api/requirement-descriptions`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ requirements: grantRequirements }),
+          body: JSON.stringify({ 
+            requirements: grantRequirements,
+            grantTitle: grantTitle // Pass title for context
+          }),
         });
 
         const data = await res.json();
-        setRequirementDescriptions(data.descriptions || []);
+        const descriptions = data.descriptions || [];
+        console.log('[ApplicationAssistant] Received descriptions, caching them');
+        
+        // Store in module-level cache
+        requirementDescriptionCache.set(reqKey, descriptions);
+        
+        setRequirementDescriptions(descriptions);
         setLastFetchedRequirements(reqKey);
       } catch (err) {
         console.error("Failed to load requirement descriptions", err);
-        setRequirementDescriptions(grantRequirements.map(() => "Description not available"));
+        const fallback = grantRequirements.map(() => "Description not available");
+        setRequirementDescriptions(fallback);
+        // Cache the fallback too
+        requirementDescriptionCache.set(reqKey, fallback);
       } finally {
         setIsLoadingDescriptions(false);
+        fetchingRef.current = false;
       }
     };
 
@@ -266,10 +349,10 @@ const ApplicationAssistant = ({
                               return capitalized.endsWith(".") ? capitalized : capitalized + ".";
                             })()}
                           </label>
-                          <p className="text-sm text-foreground">
-                            {isLoadingDescriptions
-                              ? "Loading..."
-                              : (() => {
+                          <p className="text-sm text-muted-foreground">
+                            {isLoadingDescriptions ? (
+                              <span className="inline-block h-4 w-full bg-muted animate-pulse rounded" />
+                            ) : (() => {
                                 const desc = requirementDescriptions[index];
                                 if (!desc) return "";
                                 const cleaned = desc.replace(/\[\d+\]/g, "").trim();
