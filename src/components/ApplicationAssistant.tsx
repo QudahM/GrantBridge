@@ -1,7 +1,5 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Card,
   CardContent,
@@ -11,15 +9,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Separator } from "@/components/ui/separator";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import {
-  BrainIcon,
-  ClipboardCheckIcon,
-  XIcon,
-} from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { motion } from "framer-motion";
+import { BrainIcon, ClipboardCheckIcon, XIcon } from "lucide-react";
+import React, { useState } from "react";
 
 interface ApplicationAssistantProps {
   isOpen?: boolean;
@@ -36,13 +32,17 @@ interface ApplicationAssistantProps {
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 
 // Module-level cache that persists across component mounts/unmounts
-const grantExplanationCache = new Map<string, { criteria: any, unique: string }>();
+const grantExplanationCache = new Map<
+  string,
+  { criteria: any; unique: string }
+>();
 const requirementDescriptionCache = new Map<string, string[]>();
+const questionCountCache = new Map<string, number>(); // Cache for question counts
 
 const ApplicationAssistant = ({
   isOpen = true,
-  onClose = () => { },
-  onSaveGrant = () => { },
+  onClose = () => {},
+  onSaveGrant = () => {},
   isSaved = false,
   grantTitle = "STEM Diversity Scholarship",
   grantDeadline = "May 15, 2023",
@@ -58,22 +58,116 @@ const ApplicationAssistant = ({
   const [activeTab, setActiveTab] = useState("checklist");
   const [completedItems, setCompletedItems] = useState<string[]>([]);
   const [draftResponse, setDraftResponse] = useState<string | null>(null);
-  const [requirementDescriptions, setRequirementDescriptions] = useState<string[]>([]);
+  const [requirementDescriptions, setRequirementDescriptions] = useState<
+    string[]
+  >([]);
   const [isLoadingDraft, setisLoadingDraft] = useState(false);
   const [grantCriteria, setGrantCriteria] = useState<string | null>(null);
-  const [grantUniqueFactor, setGrantUniqueFactor] = useState<string | null>(null);
-  const [lastFetchedRequirements, setLastFetchedRequirements] = useState<string>("");
+  const [grantUniqueFactor, setGrantUniqueFactor] = useState<string | null>(
+    null
+  );
+  const [lastFetchedRequirements, setLastFetchedRequirements] =
+    useState<string>("");
   const [lastFetchedTitle, setLastFetchedTitle] = useState<string>("");
   const [userQuestion, setUserQuestion] = useState("");
   const [isAsking, setIsAsking] = useState(false);
   const [showChatInput, setShowChatInput] = useState(false);
-  const [chatHistory, setChatHistory] = useState<{ question: string; answer: string }[]>([]);
+  const [chatHistory, setChatHistory] = useState<
+    { question: string; answer: string }[]
+  >([]);
+  const [totalQuestionsAsked, setTotalQuestionsAsked] = useState(0);
   const [isLoadingDescriptions, setIsLoadingDescriptions] = useState(true); // Start as true to prevent flash
   const fetchingRef = React.useRef(false); // Track if fetch is in progress
   const fetchingExplanationRef = React.useRef(false); // Track if explanation fetch is in progress
+  const chatEndRef = React.useRef<HTMLDivElement>(null); // For auto-scrolling
 
   const getStableRequirementsKey = (reqs: string[]) =>
-    reqs.map(r => r.trim().toLowerCase()).sort().join("||");
+    reqs
+      .map((r) => r.trim().toLowerCase())
+      .sort()
+      .join("||");
+
+  // Load chat history and question count from cache/localStorage when component mounts
+  React.useEffect(() => {
+    if (!grantTitle) return;
+
+    const cacheKey = grantTitle.trim().toLowerCase();
+    const chatKey = `chat_history_${cacheKey}`;
+    const countKey = `questions_asked_${cacheKey}`;
+
+    // Load chat history
+    const savedChat = localStorage.getItem(chatKey);
+    if (savedChat) {
+      try {
+        const parsed = JSON.parse(savedChat);
+        setChatHistory(parsed);
+        console.log(
+          "[ApplicationAssistant] Loaded chat history from localStorage"
+        );
+      } catch (err) {
+        console.error(
+          "[ApplicationAssistant] Failed to parse saved chat history:",
+          err
+        );
+      }
+    }
+
+    // Load question count - check module cache first, then localStorage
+    if (questionCountCache.has(cacheKey)) {
+      const cachedCount = questionCountCache.get(cacheKey)!;
+      setTotalQuestionsAsked(cachedCount);
+      console.log(
+        "[ApplicationAssistant] Loaded question count from module cache:",
+        cachedCount
+      );
+    } else {
+      const savedCount = localStorage.getItem(countKey);
+      if (savedCount) {
+        const count = parseInt(savedCount, 10);
+        if (!isNaN(count)) {
+          setTotalQuestionsAsked(count);
+          questionCountCache.set(cacheKey, count); // Store in module cache
+          console.log(
+            "[ApplicationAssistant] Loaded question count from localStorage:",
+            count
+          );
+        }
+      }
+    }
+  }, [grantTitle]);
+
+  // Save chat history to localStorage whenever it changes
+  React.useEffect(() => {
+    if (!grantTitle || chatHistory.length === 0) return;
+
+    const chatKey = `chat_history_${grantTitle.trim().toLowerCase()}`;
+    localStorage.setItem(chatKey, JSON.stringify(chatHistory));
+    console.log("[ApplicationAssistant] Saved chat history to localStorage");
+  }, [chatHistory, grantTitle]);
+
+  // Save question count to module cache and localStorage whenever it changes
+  React.useEffect(() => {
+    if (!grantTitle) return;
+
+    const cacheKey = grantTitle.trim().toLowerCase();
+    const countKey = `questions_asked_${cacheKey}`;
+
+    // Save to module cache (persists across component mounts)
+    questionCountCache.set(cacheKey, totalQuestionsAsked);
+
+    // Save to localStorage (persists across page refreshes)
+    localStorage.setItem(countKey, totalQuestionsAsked.toString());
+
+    console.log(
+      "[ApplicationAssistant] Saved question count to cache and localStorage:",
+      totalQuestionsAsked
+    );
+  }, [totalQuestionsAsked, grantTitle]);
+
+  // Auto-scroll to bottom when new messages are added
+  React.useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatHistory]);
 
   React.useEffect(() => {
     if (!grantTitle) return;
@@ -82,7 +176,10 @@ const ApplicationAssistant = ({
 
     // Check module-level cache first (persists across component mounts)
     if (grantExplanationCache.has(cacheKey)) {
-      console.log('[ApplicationAssistant] Using module-level cached explanation for:', grantTitle);
+      console.log(
+        "[ApplicationAssistant] Using module-level cached explanation for:",
+        grantTitle
+      );
       const cached = grantExplanationCache.get(cacheKey)!;
       setGrantCriteria(cached.criteria);
       setGrantUniqueFactor(cached.unique);
@@ -92,36 +189,49 @@ const ApplicationAssistant = ({
 
     // Check if already fetched in this component instance
     if (grantTitle === lastFetchedTitle) {
-      console.log('[ApplicationAssistant] Already fetched in this session:', grantTitle);
+      console.log(
+        "[ApplicationAssistant] Already fetched in this session:",
+        grantTitle
+      );
       return;
     }
 
     // Prevent multiple simultaneous fetches
     if (fetchingExplanationRef.current) {
-      console.log('[ApplicationAssistant] Explanation fetch already in progress, skipping');
+      console.log(
+        "[ApplicationAssistant] Explanation fetch already in progress, skipping"
+      );
       return;
     }
 
     const fetchGrantExplanation = async () => {
       fetchingExplanationRef.current = true;
-      
+
       try {
-        console.log('[ApplicationAssistant] Fetching grant explanation for:', grantTitle);
+        console.log(
+          "[ApplicationAssistant] Fetching grant explanation for:",
+          grantTitle
+        );
         const res = await fetch(`${BASE_URL}/api/explain-grant`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: grantTitle, requirements: grantRequirements }),
+          body: JSON.stringify({
+            title: grantTitle,
+            requirements: grantRequirements,
+          }),
         });
 
         const data = await res.json();
-        console.log('[ApplicationAssistant] Received grant explanation, caching it');
-        
+        console.log(
+          "[ApplicationAssistant] Received grant explanation, caching it"
+        );
+
         // Store in module-level cache
         grantExplanationCache.set(cacheKey, {
           criteria: data.criteria,
-          unique: data.unique
+          unique: data.unique,
         });
-        
+
         setGrantCriteria(data.criteria);
         setGrantUniqueFactor(data.unique);
         setLastFetchedTitle(grantTitle);
@@ -136,11 +246,16 @@ const ApplicationAssistant = ({
   }, [grantTitle, grantRequirements, lastFetchedTitle]);
 
   React.useEffect(() => {
-    const reqKey = `${grantTitle?.trim().toLowerCase()}::${getStableRequirementsKey(grantRequirements)}`;
-    
+    const reqKey = `${grantTitle
+      ?.trim()
+      .toLowerCase()}::${getStableRequirementsKey(grantRequirements)}`;
+
     // Check module-level cache first (persists across component mounts)
     if (requirementDescriptionCache.has(reqKey)) {
-      console.log('[ApplicationAssistant] Using module-level cached descriptions for:', reqKey);
+      console.log(
+        "[ApplicationAssistant] Using module-level cached descriptions for:",
+        reqKey
+      );
       setRequirementDescriptions(requirementDescriptionCache.get(reqKey)!);
       setIsLoadingDescriptions(false);
       setLastFetchedRequirements(reqKey);
@@ -149,47 +264,57 @@ const ApplicationAssistant = ({
 
     // Check if already fetched in this component instance
     if (reqKey === lastFetchedRequirements) {
-      console.log('[ApplicationAssistant] Already fetched in this session:', reqKey);
+      console.log(
+        "[ApplicationAssistant] Already fetched in this session:",
+        reqKey
+      );
       setIsLoadingDescriptions(false);
       return;
     }
 
     // Prevent multiple simultaneous fetches
     if (fetchingRef.current) {
-      console.log('[ApplicationAssistant] Fetch already in progress, skipping');
+      console.log("[ApplicationAssistant] Fetch already in progress, skipping");
       return;
     }
 
     const fetchDescriptions = async () => {
       fetchingRef.current = true;
-      
+
       // Clear old descriptions immediately to prevent showing stale data
       setRequirementDescriptions([]);
       setIsLoadingDescriptions(true);
-      
+
       try {
-        console.log('[ApplicationAssistant] Fetching descriptions for:', grantTitle);
+        console.log(
+          "[ApplicationAssistant] Fetching descriptions for:",
+          grantTitle
+        );
         const res = await fetch(`${BASE_URL}/api/requirement-descriptions`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             requirements: grantRequirements,
-            grantTitle: grantTitle // Pass title for context
+            grantTitle: grantTitle, // Pass title for context
           }),
         });
 
         const data = await res.json();
         const descriptions = data.descriptions || [];
-        console.log('[ApplicationAssistant] Received descriptions, caching them');
-        
+        console.log(
+          "[ApplicationAssistant] Received descriptions, caching them"
+        );
+
         // Store in module-level cache
         requirementDescriptionCache.set(reqKey, descriptions);
-        
+
         setRequirementDescriptions(descriptions);
         setLastFetchedRequirements(reqKey);
       } catch (err) {
         console.error("Failed to load requirement descriptions", err);
-        const fallback = grantRequirements.map(() => "Description not available");
+        const fallback = grantRequirements.map(
+          () => "Description not available"
+        );
         setRequirementDescriptions(fallback);
         // Cache the fallback too
         requirementDescriptionCache.set(reqKey, fallback);
@@ -213,20 +338,24 @@ const ApplicationAssistant = ({
   const handleGenerateDraft = async () => {
     setisLoadingDraft(true);
     setDraftResponse(null);
-    const query = `Based on the following grant requirements, help me draft an application: ${grantRequirements.join("; ")}`;
+    const query = `Based on the following grant requirements, help me draft an application: ${grantRequirements.join(
+      "; "
+    )}`;
 
     try {
       const response = await fetch(`${BASE_URL}/api/sonar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: query })
+        body: JSON.stringify({ question: query }),
       });
 
       const data = await response.json();
       setDraftResponse(data.answer || "No response received.");
     } catch (error) {
       console.error("Error generating draft:", error);
-      setDraftResponse("There was an error generating your draft. Please try again.");
+      setDraftResponse(
+        "There was an error generating your draft. Please try again."
+      );
     } finally {
       setisLoadingDraft(false);
     }
@@ -242,17 +371,20 @@ const ApplicationAssistant = ({
   const formatDraftText = (text: string): string => {
     return text
       .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // bold markdown
-      .replace(/\*(.*?)\*/g, "<strong>$1</strong>")     // bold asterisk-surrounded text
-      .replace(/^##\s*(.*)$/gm, "<div class=\"text-base font-bold mt-3 \">$1</div>")
+      .replace(/\*(.*?)\*/g, "<strong>$1</strong>") // bold asterisk-surrounded text
+      .replace(
+        /^##\s*(.*)$/gm,
+        '<div class="text-base font-bold mt-3 ">$1</div>'
+      )
       .replace(/\[\d+\]/g, "");
-  }
+  };
 
   const formatExplainText = (text: string): string => {
     return text
-      .replace(/\[\d+\]/g, "")                         // Remove [1], [2], etc.
+      .replace(/\[\d+\]/g, "") // Remove [1], [2], etc.
       .replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>") // Bold **text**
-      .replace(/\*(.*?)\*/g, "<strong>$1</strong>");   // Bold *text*
-  }
+      .replace(/\*(.*?)\*/g, "<strong>$1</strong>"); // Bold *text*
+  };
 
   return (
     <motion.div
@@ -336,28 +468,46 @@ const ApplicationAssistant = ({
                         <Checkbox
                           id={`requirement-${index}`}
                           checked={completedItems.includes(requirement)}
-                          onCheckedChange={() => toggleCompletedItem(requirement)}
+                          onCheckedChange={() =>
+                            toggleCompletedItem(requirement)
+                          }
                         />
                         <div className="grid gap-1.5">
                           <label
                             htmlFor={`requirement-${index}`}
-                            className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${completedItems.includes(requirement) ? "line-through text-muted-foreground" : ""}`}
+                            className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
+                              completedItems.includes(requirement)
+                                ? "line-through text-muted-foreground"
+                                : ""
+                            }`}
                           >
                             {(() => {
-                              const cleaned = requirement.replace(/^[-–•*]\s*/, "").trim();
-                              const capitalized = cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
-                              return capitalized.endsWith(".") ? capitalized : capitalized + ".";
+                              const cleaned = requirement
+                                .replace(/^[-–•*]\s*/, "")
+                                .trim();
+                              const capitalized =
+                                cleaned.charAt(0).toUpperCase() +
+                                cleaned.slice(1);
+                              return capitalized.endsWith(".")
+                                ? capitalized
+                                : capitalized + ".";
                             })()}
                           </label>
                           <p className="text-sm text-muted-foreground">
                             {isLoadingDescriptions ? (
                               <span className="inline-block h-4 w-full bg-muted animate-pulse rounded" />
-                            ) : (() => {
+                            ) : (
+                              (() => {
                                 const desc = requirementDescriptions[index];
                                 if (!desc) return "";
-                                const cleaned = desc.replace(/\[\d+\]/g, "").trim();
-                                return cleaned.endsWith(".") ? cleaned : cleaned + ".";
-                              })()}
+                                const cleaned = desc
+                                  .replace(/\[\d+\]/g, "")
+                                  .trim();
+                                return cleaned.endsWith(".")
+                                  ? cleaned
+                                  : cleaned + ".";
+                              })()
+                            )}
                           </p>
                         </div>
                       </div>
@@ -365,14 +515,18 @@ const ApplicationAssistant = ({
                   </div>
                 </CardContent>
                 <CardFooter>
-                  <Button className="w-full" onClick={handleGenerateDraft}>Generate application draft</Button>
+                  <Button className="w-full" onClick={handleGenerateDraft}>
+                    Generate application draft
+                  </Button>
                 </CardFooter>
               </Card>
               {isLoadingDraft && (
                 <Card className="mt-4">
                   <CardHeader>
                     <CardTitle>Loading draft...</CardTitle>
-                    <CardDescription>Generating your draft application...</CardDescription>
+                    <CardDescription>
+                      Generating your draft application...
+                    </CardDescription>
                   </CardHeader>
                 </Card>
               )}
@@ -382,12 +536,16 @@ const ApplicationAssistant = ({
                   <CardHeader>
                     <CardTitle>Draft Application</CardTitle>
                     <CardDescription>
-                      Here is a draft application based on the given requirements
+                      Here is a draft application based on the given
+                      requirements
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="whitespace-pre-line text-sm text-foreground"
-                      dangerouslySetInnerHTML={{ __html: formatDraftText(draftResponse) }}
+                    <div
+                      className="whitespace-pre-line text-sm text-foreground"
+                      dangerouslySetInnerHTML={{
+                        __html: formatDraftText(draftResponse),
+                      }}
                     />
                   </CardContent>
                 </Card>
@@ -456,35 +614,52 @@ const ApplicationAssistant = ({
                 <CardContent>
                   <div className="space-y-4">
                     <div className="p-4 bg-muted rounded-md">
-                      <h4 className="font-medium mb-2">Key Selection Criteria</h4>
+                      <h4 className="font-medium mb-2">
+                        Key Selection Criteria
+                      </h4>
                       <ul className="text-sm text-foreground list-disc list-inside space-y-1">
-                        {(Array.isArray(grantCriteria) ? grantCriteria : [])
-                          .map((item, index) => {
-                            const [title, ...rest] = item.replace(/^•\s*/, "").split(":");
-                            const description = rest.join(":").trim(); // in case ":" appears in description
-                            return (
-                              <li key={index}>
-                                <span className="font-medium">{title.trim()}:</span>{" "}
-                                <span
-                                  dangerouslySetInnerHTML={{
-                                    __html: formatExplainText(
-                                      description.endsWith(".") ? description : description + "."
-                                    ),
-                                  }}
-                                />
-                              </li>
-                            );
-                          })}
+                        {(Array.isArray(grantCriteria)
+                          ? grantCriteria
+                          : []
+                        ).map((item, index) => {
+                          const [title, ...rest] = item
+                            .replace(/^•\s*/, "")
+                            .split(":");
+                          const description = rest.join(":").trim(); // in case ":" appears in description
+                          return (
+                            <li key={index}>
+                              <span className="font-medium">
+                                {title.trim()}:
+                              </span>{" "}
+                              <span
+                                dangerouslySetInnerHTML={{
+                                  __html: formatExplainText(
+                                    description.endsWith(".")
+                                      ? description
+                                      : description + "."
+                                  ),
+                                }}
+                              />
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
 
                     <Separator />
 
                     <div>
-                      <h4 className="font-medium mb-2">What Makes This Grant Unique</h4>
-                      <p className="text-sm text-muted-foreground whitespace-pre-line"
-                        dangerouslySetInnerHTML={{ __html: formatExplainText(grantUniqueFactor || "Loading...") }} />
-
+                      <h4 className="font-medium mb-2">
+                        What Makes This Grant Unique
+                      </h4>
+                      <p
+                        className="text-sm text-muted-foreground whitespace-pre-line"
+                        dangerouslySetInnerHTML={{
+                          __html: formatExplainText(
+                            grantUniqueFactor || "Loading..."
+                          ),
+                        }}
+                      />
                     </div>
                   </div>
                 </CardContent>
@@ -496,8 +671,14 @@ const ApplicationAssistant = ({
                         <p className="text-sm">{entry.question}</p>
                       </div>
                       <div className="bg-muted p-3 rounded-md text-sm space-y-2">
-                        <p className="font-medium text-primary">Sonar Response:</p>
-                        <p dangerouslySetInnerHTML={{ __html: formatExplainText(entry.answer) }} />
+                        <p className="font-medium text-primary">
+                          Sonar Response:
+                        </p>
+                        <p
+                          dangerouslySetInnerHTML={{
+                            __html: formatExplainText(entry.answer),
+                          }}
+                        />
                       </div>
                     </div>
                   ))}
@@ -506,49 +687,147 @@ const ApplicationAssistant = ({
                       <Textarea
                         value={userQuestion}
                         onChange={(e) => setUserQuestion(e.target.value)}
-                        placeholder="Ask something specific about this grant..."
-                      />
-                      <Button
-                        disabled={isAsking || !userQuestion.trim()}
-                        onClick={async () => {
-                          setIsAsking(true);
-                          try {
-                            const response = await fetch(`${BASE_URL}/api/sonar`, {
-                              method: "POST",
-                              headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({
-                                question: `Grant: ${grantTitle}. ${grantUniqueFactor}. Question: ${userQuestion}`,
-                              }),
-                            });
-
-                            const data = await response.json();
-                            const newEntry = {
-                              question: userQuestion,
-                              answer: data.answer || "No response received.",
-                            };
-
-                            setChatHistory((prev) => {
-                              const updated = [...prev, newEntry];
-                              return updated.length > 5 ? updated.slice(-5) : updated;
-                            });
-
-                            setUserQuestion("");
-                          } catch (err) {
-                            console.error(err);
-                          } finally {
-                            setIsAsking(false);
-                            setShowChatInput(false);
+                        onKeyDown={(e) => {
+                          // Submit on Enter (without Shift)
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            if (
+                              !isAsking &&
+                              userQuestion.trim() &&
+                              totalQuestionsAsked < 5
+                            ) {
+                              // Trigger submit
+                              document
+                                .getElementById("submit-question-btn")
+                                ?.click();
+                            }
                           }
                         }}
-                      >
-                        Submit Question
-                      </Button>
+                        placeholder={
+                          totalQuestionsAsked >= 5
+                            ? "Question limit reached (5/5)"
+                            : "Ask something specific about this grant... (Press Enter to send)"
+                        }
+                        maxLength={500}
+                        className="min-h-[80px]"
+                        disabled={totalQuestionsAsked >= 5}
+                      />
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground">
+                          {totalQuestionsAsked}/5 questions •{" "}
+                          {userQuestion.length}/500 characters
+                        </span>
+                        <Button
+                          id="submit-question-btn"
+                          disabled={
+                            isAsking ||
+                            !userQuestion.trim() ||
+                            totalQuestionsAsked >= 5
+                          }
+                          onClick={async () => {
+                            const currentQuestion = userQuestion.trim();
+                            if (!currentQuestion) return;
+
+                            // Check if limit reached
+                            if (totalQuestionsAsked >= 5) {
+                              const limitEntry = {
+                                question: currentQuestion,
+                                answer:
+                                  "You've reached the limit of 5 questions per grant. This helps us manage costs and ensure fair access for all users. Please explore other grants or contact support if you need more assistance.",
+                              };
+                              setChatHistory((prev) => [...prev, limitEntry]);
+                              setUserQuestion("");
+                              return;
+                            }
+
+                            setIsAsking(true);
+                            setUserQuestion(""); // Clear input immediately
+
+                            // Add loading message
+                            const loadingEntry = {
+                              question: currentQuestion,
+                              answer: "Thinking...",
+                            };
+                            setChatHistory((prev) => [...prev, loadingEntry]);
+
+                            try {
+                              const response = await fetch(
+                                `${BASE_URL}/api/sonar`,
+                                {
+                                  method: "POST",
+                                  headers: {
+                                    "Content-Type": "application/json",
+                                  },
+                                  body: JSON.stringify({
+                                    question: `Grant: ${grantTitle}. ${grantUniqueFactor}. Question: ${currentQuestion}`,
+                                  }),
+                                }
+                              );
+
+                              if (!response.ok) {
+                                throw new Error(
+                                  `API error: ${response.status}`
+                                );
+                              }
+
+                              const data = await response.json();
+
+                              // Replace loading message with actual response
+                              setChatHistory((prev) => {
+                                const updated = prev.slice(0, -1); // Remove loading message
+                                const newEntry = {
+                                  question: currentQuestion,
+                                  answer:
+                                    data.answer || "No response received.",
+                                };
+                                const withNew = [...updated, newEntry];
+                                // Keep last 5 exchanges
+                                return withNew.length > 5
+                                  ? withNew.slice(-5)
+                                  : withNew;
+                              });
+
+                              // Increment question counter (only on successful response)
+                              setTotalQuestionsAsked((prev) => prev + 1);
+                            } catch (err) {
+                              console.error("[Chatbot] Error:", err);
+
+                              // Replace loading message with error
+                              setChatHistory((prev) => {
+                                const updated = prev.slice(0, -1); // Remove loading message
+                                const errorEntry = {
+                                  question: currentQuestion,
+                                  answer:
+                                    "Sorry, I couldn't process your question. Please try again or rephrase your question.",
+                                };
+                                return [...updated, errorEntry];
+                              });
+
+                              // Don't increment counter on error - let user retry
+                            } finally {
+                              setIsAsking(false);
+                              // FIX: Don't close the input - keep it open for more questions
+                            }
+                          }}
+                        >
+                          {totalQuestionsAsked >= 5
+                            ? "Limit Reached (5/5)"
+                            : isAsking
+                            ? "Sending..."
+                            : "Submit Question"}
+                        </Button>
+                      </div>
                     </div>
                   ) : (
-                    <Button variant="outline" className="w-full" onClick={() => setShowChatInput(true)}>
+                    <Button
+                      variant="outline"
+                      className="w-full"
+                      onClick={() => setShowChatInput(true)}
+                    >
                       Ask a specific question
                     </Button>
                   )}
+                  <div ref={chatEndRef} />
                 </CardFooter>
               </Card>
             </TabsContent>
@@ -571,4 +850,15 @@ const ApplicationAssistant = ({
   );
 };
 
-export default ApplicationAssistant;
+// Wrap with error boundary for production safety
+import { InlineErrorBoundary } from "./error-boundaries";
+
+const ApplicationAssistantWithErrorBoundary = (
+  props: ApplicationAssistantProps
+) => (
+  <InlineErrorBoundary componentName="Application Assistant">
+    <ApplicationAssistant {...props} />
+  </InlineErrorBoundary>
+);
+
+export default ApplicationAssistantWithErrorBoundary;

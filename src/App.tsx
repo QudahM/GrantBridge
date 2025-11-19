@@ -1,16 +1,22 @@
 import { Suspense, useEffect } from "react";
-import { Routes, Route, useLocation } from "react-router-dom";
-import { AuthProvider } from "./contexts/AuthContext";
-import { LoginPage, ProtectedRoute, ForgotPasswordPage, ResetPasswordPage } from "./components/auth";
+import { Route, Routes, useLocation } from "react-router-dom";
+import {
+  ForgotPasswordPage,
+  LoginPage,
+  ProtectedRoute,
+  ResetPasswordPage,
+} from "./components/auth";
+import { ContactPage } from "./components/ContactPage";
+import { CookieConsent } from "./components/CookieConsent";
+import { ErrorBoundary } from "./components/error-boundaries";
+import { FAQPage } from "./components/FAQPage";
+import GrantDashboard from "./components/GrantDashboard";
 import Home from "./components/home";
 import OnboardingFlow from "./components/OnboardingFlow";
-import GrantDashboard from "./components/GrantDashboard";
-import { UserProfile } from "./components/UserProfile";
-import { FAQPage } from "./components/FAQPage";
 import { TermsPage } from "./components/TermsPage";
-import { ContactPage } from "./components/ContactPage";
+import { UserProfileWithErrorBoundary as UserProfile } from "./components/UserProfile";
+import { AuthProvider } from "./contexts/AuthContext";
 import { trackPageView } from "./lib/analytics";
-import { CookieConsent } from "./components/CookieConsent";
 
 function App() {
   const location = useLocation();
@@ -19,46 +25,48 @@ function App() {
   }, [location]);
 
   return (
-    <AuthProvider>
-      <Suspense fallback={<p>Loading...</p>}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-          <Route path="/reset-password" element={<ResetPasswordPage />} />
-          <Route 
-            path="/onboarding" 
-            element={
-              <ProtectedRoute requireAuth={false}>
-                <OnboardingFlow />
-              </ProtectedRoute>
-            } 
-          />
-          <Route 
-            path="/dashboard" 
-            element={
-              <ProtectedRoute requireAuth={false}>
-                <GrantDashboard />
-              </ProtectedRoute>
-            } 
-          />
-          <Route path="/explore" element={<OnboardingFlow />} />
-          <Route 
-            path="/profile" 
-            element={
-              <ProtectedRoute>
-                <UserProfile />
-              </ProtectedRoute>
-            } 
-          />
-          <Route path="/faq" element={<FAQPage />} />
-          <Route path="/terms" element={<TermsPage />} />
-          <Route path="/contact" element={<ContactPage />} />
-        </Routes>
-        
-        <CookieConsent />
-      </Suspense>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <Suspense fallback={<p>Loading...</p>}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+            <Route path="/reset-password" element={<ResetPasswordPage />} />
+            <Route
+              path="/onboarding"
+              element={
+                <ProtectedRoute requireAuth={false}>
+                  <OnboardingFlow />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute requireAuth={false}>
+                  <GrantDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/explore" element={<OnboardingFlow />} />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <UserProfile />
+                </ProtectedRoute>
+              }
+            />
+            <Route path="/faq" element={<FAQPage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/contact" element={<ContactPage />} />
+          </Routes>
+
+          <CookieConsent />
+        </Suspense>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

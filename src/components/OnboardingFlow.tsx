@@ -1,10 +1,4 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion } from "framer-motion";
-import { useAuth } from "../contexts/AuthContext";
-import { upsertUserProfile, UserProfileData } from "../lib/profile";
 import { Button } from "@/components/ui/button";
-import { OnboardingSEO } from "./SEO";
 import {
   Card,
   CardContent,
@@ -12,8 +6,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Progress } from "@/components/ui/progress";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
   Select,
   SelectContent,
@@ -21,11 +18,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Progress } from "@/components/ui/progress";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ChevronRight, ChevronLeft, Check } from "lucide-react";
+import { motion } from "framer-motion";
+import { Check, ChevronLeft, ChevronRight } from "lucide-react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import countries from "world-countries";
+import { useAuth } from "../contexts/AuthContext";
+import { upsertUserProfile, UserProfileData } from "../lib/profile";
+import { OnboardingSEO } from "./SEO";
 
 interface OnboardingFlowProps {
   onComplete?: (userData: any) => void;
@@ -82,7 +82,7 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
       setProgress(((step + 1) / totalSteps) * 100);
     } else {
       setSaving(true);
-      
+
       try {
         // Prepare profile data in the correct format for UserProfileData
         const finalUserProfile: UserProfileData = {
@@ -104,15 +104,18 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           lastName: user?.user_metadata?.last_name || undefined,
         };
 
-        console.log('Saving profile data:', finalUserProfile);
+        console.log("Saving profile data:", finalUserProfile);
 
         // Save to Supabase if user is authenticated
         if (user?.id) {
           try {
-            const savedProfile = await upsertUserProfile(user.id, finalUserProfile);
-            console.log('Profile saved successfully:', savedProfile);
+            const savedProfile = await upsertUserProfile(
+              user.id,
+              finalUserProfile
+            );
+            console.log("Profile saved successfully:", savedProfile);
           } catch (saveError) {
-            console.error('Failed to save profile to Supabase:', saveError);
+            console.error("Failed to save profile to Supabase:", saveError);
             // Continue with navigation even if save fails
           }
         }
@@ -133,11 +136,11 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
           ethnicity: userData.ethnicity,
           identifiers: userData.identifiers,
         };
-        
+
         onComplete(legacyProfile);
         navigate("/dashboard", { state: legacyProfile });
       } catch (error) {
-        console.error('Error saving profile:', error);
+        console.error("Error saving profile:", error);
         // Still navigate to dashboard even if save fails (for guest users)
         const legacyProfile = {
           age: Number(userData.age),
@@ -603,61 +606,74 @@ const OnboardingFlow: React.FC<OnboardingFlowProps> = ({
     <>
       <OnboardingSEO />
       <div className="min-h-screen bg-gradient-to-br from-slate-900 via-indigo-900 to-slate-800 text-white p-4 md:p-8 flex flex-col items-center">
-      <div className="w-full max-w-4xl">
-        <div className="mb-8">
-          <Progress
-            value={progress}
-            className="h-2 bg-blue-800 [&>div]:bg-white"
-          />
-          <div className="flex justify-between mt-2 text-sm text-muted-foreground text-white">
-            <span>
-              Step {step} of {totalSteps}
-            </span>
-            <span>{Math.round(progress)}% Complete</span>
+        <div className="w-full max-w-4xl">
+          <div className="mb-8">
+            <Progress
+              value={progress}
+              className="h-2 bg-blue-800 [&>div]:bg-white"
+            />
+            <div className="flex justify-between mt-2 text-sm text-muted-foreground text-white">
+              <span>
+                Step {step} of {totalSteps}
+              </span>
+              <span>{Math.round(progress)}% Complete</span>
+            </div>
           </div>
+          <Card className="bg-slate-800 text-white border border-slate-700">
+            {renderStep()}
+            <CardFooter className="flex justify-between pt-6">
+              <Button
+                variant="outline"
+                onClick={handleBack}
+                className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-violet-600 text-white hover:from-indigo-400 hover:to-violet-500 transition-colors duration-300 shadow-lg hover:shadow-xl"
+              >
+                <ChevronLeft className="h-4 w-4" /> Back
+              </Button>
+              <Button
+                variant="outline"
+                onClick={handleNext}
+                disabled={saving}
+                className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-violet-600 text-white hover:from-indigo-400 hover:to-violet-500 transition-colors duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {saving ? (
+                  <>
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        ease: "linear",
+                      }}
+                    >
+                      <Check className="h-4 w-4" />
+                    </motion.div>
+                    Saving...
+                  </>
+                ) : step === totalSteps ? (
+                  <>
+                    <Check className="h-4 w-4" /> Complete
+                  </>
+                ) : (
+                  <>
+                    <ChevronRight className="h-4 w-4" /> Next
+                  </>
+                )}
+              </Button>
+            </CardFooter>
+          </Card>
         </div>
-        <Card className="bg-slate-800 text-white border border-slate-700">
-          {renderStep()}
-          <CardFooter className="flex justify-between pt-6">
-            <Button
-              variant="outline"
-              onClick={handleBack}
-              className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-violet-600 text-white hover:from-indigo-400 hover:to-violet-500 transition-colors duration-300 shadow-lg hover:shadow-xl"
-            >
-              <ChevronLeft className="h-4 w-4" /> Back
-            </Button>
-            <Button
-              variant="outline"
-              onClick={handleNext}
-              disabled={saving}
-              className="flex items-center gap-2 bg-gradient-to-r from-indigo-500 to-violet-600 text-white hover:from-indigo-400 hover:to-violet-500 transition-colors duration-300 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {saving ? (
-                <>
-                  <motion.div
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  >
-                    <Check className="h-4 w-4" />
-                  </motion.div>
-                  Saving...
-                </>
-              ) : step === totalSteps ? (
-                <>
-                  <Check className="h-4 w-4" /> Complete
-                </>
-              ) : (
-                <>
-                  <ChevronRight className="h-4 w-4" /> Next
-                </>
-              )}
-            </Button>
-          </CardFooter>
-        </Card>
       </div>
-    </div>
     </>
   );
 };
 
-export default OnboardingFlow;
+// Wrap with error boundary for production safety
+import { InlineErrorBoundary } from "./error-boundaries";
+
+const OnboardingFlowWithErrorBoundary = () => (
+  <InlineErrorBoundary componentName="Onboarding Flow">
+    <OnboardingFlow />
+  </InlineErrorBoundary>
+);
+
+export default OnboardingFlowWithErrorBoundary;

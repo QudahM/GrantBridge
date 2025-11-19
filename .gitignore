@@ -1,32 +1,64 @@
-# Logs
-logs
+node_modules/
+
+dist/
+dist-ssr/
+build/
+
+.env
+.env.local
+.env.*.local
+server/.env
+server/.env.local
+roadmap.md
+tools-to-add.md
+implementation.md
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
-roadmap.md
 
-node_modules
-dist
-dist-ssr
+coverage/
+.nyc_output/
+*.lcov
+test-results/
+playwright-report/
+playwright/.cache/
+
+storybook-static/
+
+# docs/
+
 *.local
-.env
+*.tmp
+*.temp
+*.swp
+*~
+.cache/
+.vite/
+*.tsbuildinfo
+.eslintcache
+.stylelintcache
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
+.vscode/
+# !.vscode/extensions.json
+# !.vscode/settings.json
 .idea
-.DS_Store
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
 
-!node_modules/.vite
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Desktop.ini
 
-core
-
-.github/
+.sentryclirc
