@@ -437,11 +437,9 @@ app.post("/api/grants", sonarLimiter, async (req, res): Promise<any> => {
       console.error("  1. Sonar API rate limit reached");
       console.error("  2. Invalid API key");
       console.error("  3. Sonar service issue");
-      return res
-        .status(500)
-        .json({
-          error: "Sonar API returned empty response. Please try again later.",
-        });
+      return res.status(500).json({
+        error: "Sonar API returned empty response. Please try again later.",
+      });
     }
 
     let grants = [];
@@ -766,6 +764,62 @@ Respond in strict JSON format like:
   } catch (error) {
     console.error("Sonar grant explanation error:", error);
     return res.status(500).json({ error: "Failed to generate explanation." });
+  }
+});
+
+// Contact form endpoint
+app.post("/api/contact", generalLimiter, async (req, res): Promise<any> => {
+  try {
+    const { name, email, contactType, subject, message, rating } = req.body;
+
+    // Validation
+    if (!name || !email || !message) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // Import nodemailer
+    const nodemailer = require("nodemailer");
+
+    // Create transporter using Hostinger SMTP
+    const transporter = nodemailer.createTransport({
+      host: process.env.SMTP_HOST || "smtp.hostinger.com",
+      port: parseInt(process.env.SMTP_PORT || "587"),
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: process.env.SMTP_USER, // support@grantbridge.online
+        pass: process.env.SMTP_PASS, // your email password
+      },
+    });
+
+    // Email content
+    const emailContent = `
+      <h2>New ${contactType} from GrantBridge</h2>
+      <p><strong>From:</strong> ${name} (${email})</p>
+      <p><strong>Type:</strong> ${contactType}</p>
+      ${subject ? `<p><strong>Subject:</strong> ${subject}</p>` : ""}
+      ${rating ? `<p><strong>Rating:</strong> ${rating}/5 stars</p>` : ""}
+      <p><strong>Message:</strong></p>
+      <p>${message.replace(/\n/g, "<br>")}</p>
+      <hr>
+      <p><small>Sent from GrantBridge Contact Form</small></p>
+    `;
+
+    // Send email
+    await transporter.sendMail({
+      from: `"GrantBridge Contact" <${process.env.SMTP_USER}>`,
+      to: process.env.SUPPORT_EMAIL || "support@grantbridge.online",
+      replyTo: email, // User's email for easy reply
+      subject: `[GrantBridge ${contactType}] ${
+        subject || "New message from " + name
+      }`,
+      html: emailContent,
+    });
+
+    console.log(`Contact form email sent from ${email}`);
+    return res.json({ success: true, message: "Email sent successfully" });
+  } catch (error) {
+    console.error("Error sending contact email:", error);
+    return res.status(500).json({ error: "Failed to send email" });
   }
 });
 
