@@ -1,45 +1,74 @@
-import express from 'express';
-import cors from 'cors';
-import dotenv from 'dotenv';
-import fetch from 'node-fetch';
-import cron from 'node-cron';
-import rateLimit from 'express-rate-limit';
-import { syncGrantsToSupabase } from './grantsSync';
+import cors from "cors";
+import dotenv from "dotenv";
+import express from "express";
+import rateLimit from "express-rate-limit";
+import helmet from "helmet";
+import cron from "node-cron";
+import fetch from "node-fetch";
+import { syncGrantsToSupabase } from "./grantsSync";
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT ?? 5000;
 
+// Security headers with helmet
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],
+        scriptSrc: ["'self'"],
+        imgSrc: ["'self'", "data:", "https:"],
+        connectSrc: ["'self'", "https://api.perplexity.ai"],
+        fontSrc: ["'self'", "data:"],
+        objectSrc: ["'none'"],
+        mediaSrc: ["'self'"],
+        frameSrc: ["'none'"],
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+    crossOriginResourcePolicy: { policy: "cross-origin" },
+  })
+);
+
 // Secure CORS configuration
 const allowedOrigins = [
-  ...(process.env.FRONTEND_URL?.split(',').map(url => url.trim()) || []),
+  ...(process.env.FRONTEND_URL?.split(",").map((url) => url.trim()) || []),
   // Allow localhost for development
-  ...(process.env.NODE_ENV === 'development'
-    ? ['http://localhost:5173', 'http://localhost:5174', 'http://localhost:3000']
-    : []
-  )
+  ...(process.env.NODE_ENV === "development"
+    ? [
+        "http://localhost:5173",
+        "http://localhost:5174",
+        "http://localhost:3000",
+      ]
+    : []),
 ].filter(Boolean) as string[];
 
-app.use(cors({
-  origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps, Postman, curl)
-    if (!origin) {
-      return callback(null, true);
-    }
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, Postman, curl)
+      if (!origin) {
+        return callback(null, true);
+      }
 
-    if (allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      console.warn(`[CORS] Blocked request from unauthorized origin: ${origin}`);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
-  maxAge: 86400, // 24 hours
-}));
+      if (allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        console.warn(
+          `[CORS] Blocked request from unauthorized origin: ${origin}`
+        );
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    maxAge: 86400, // 24 hours
+  })
+);
 
 app.use(express.json());
 
@@ -48,7 +77,7 @@ app.use(express.json());
 const generalLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // 100 requests per 15 minutes per IP
-  message: 'Too many requests from this IP, please try again later.',
+  message: "Too many requests from this IP, please try again later.",
   standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
@@ -57,7 +86,7 @@ const generalLimiter = rateLimit({
 const sonarLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 25, // 10 grant searches per hour per IP
-  message: 'Grant search limit reached. Please try again in an hour.',
+  message: "Grant search limit reached. Please try again in an hour.",
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -66,91 +95,104 @@ const sonarLimiter = rateLimit({
 const syncLimiter = rateLimit({
   windowMs: 60 * 60 * 1000, // 1 hour
   max: 1, // Only 1 manual sync per hour
-  message: 'Sync already triggered recently. Please wait an hour.',
+  message: "Sync already triggered recently. Please wait an hour.",
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 // Apply general rate limiting to all API routes
-app.use('/api/', generalLimiter);
+app.use("/api/", generalLimiter);
 
 // Admin authentication middleware
-const adminAuth = (req: express.Request, res: express.Response, next: express.NextFunction): any => {
+const adminAuth = (
+  req: express.Request,
+  res: express.Response,
+  next: express.NextFunction
+): any => {
   const authHeader = req.headers.authorization;
   const adminSecret = process.env.ADMIN_SECRET;
 
   // If no admin secret is configured, log warning but allow (for backward compatibility)
   if (!adminSecret) {
-    console.warn('[Security] ADMIN_SECRET not configured - admin endpoints are unprotected!');
+    console.warn(
+      "[Security] ADMIN_SECRET not configured - admin endpoints are unprotected!"
+    );
     return next();
   }
 
   // Check if authorization header matches
   if (authHeader !== `Bearer ${adminSecret}`) {
-    console.warn('[Security] Unauthorized admin access attempt');
-    return res.status(401).json({ error: 'Unauthorized - Invalid admin credentials' });
+    console.warn("[Security] Unauthorized admin access attempt");
+    return res
+      .status(401)
+      .json({ error: "Unauthorized - Invalid admin credentials" });
   }
 
   next();
 };
 
 // Health check endpoint
-app.get('/api/health', (_req, res) => {
+app.get("/api/health", (_req, res) => {
   res.json({
-    status: 'ok',
+    status: "ok",
     timestamp: new Date().toISOString(),
     services: {
-      grants_cache: 'active',
-      live_search: 'active',
-      cron_sync: 'scheduled'
-    }
+      grants_cache: "active",
+      live_search: "active",
+      cron_sync: "scheduled",
+    },
   });
 });
 
 // Schedule grants sync every 7 days at 2 AM
 // Cron format: minute hour day-of-month month day-of-week
 // '0 2 */7 * *' = At 02:00 AM, every 7 days
-cron.schedule('0 2 */7 * *', async () => {
-  console.log('[Cron] Running scheduled grants sync...');
+cron.schedule("0 2 */7 * *", async () => {
+  console.log("[Cron] Running scheduled grants sync...");
   try {
     await syncGrantsToSupabase();
   } catch (error) {
-    console.error('[Cron] Scheduled sync failed:', error);
+    console.error("[Cron] Scheduled sync failed:", error);
   }
 });
 
-console.log('[Server] Grants sync cron job scheduled (every 7 days at 2 AM)');
+console.log("[Server] Grants sync cron job scheduled (every 7 days at 2 AM)");
 
 // Manual sync endpoint for testing/admin use
 // Rate limited to 1 request per hour
 // Protected with admin authentication
-app.post('/api/sync-grants', adminAuth, syncLimiter, async (req, res): Promise<any> => {
-  try {
-    console.log('[API] Manual grants sync triggered');
-    await syncGrantsToSupabase();
-    return res.json({ success: true, message: 'Grants synced successfully' });
-  } catch (error) {
-    console.error('[API] Manual sync failed:', error);
-    return res.status(500).json({ error: 'Failed to sync grants' });
+app.post(
+  "/api/sync-grants",
+  adminAuth,
+  syncLimiter,
+  async (req, res): Promise<any> => {
+    try {
+      console.log("[API] Manual grants sync triggered");
+      await syncGrantsToSupabase();
+      return res.json({ success: true, message: "Grants synced successfully" });
+    } catch (error) {
+      console.error("[API] Manual sync failed:", error);
+      return res.status(500).json({ error: "Failed to sync grants" });
+    }
   }
-});
+);
 
 // Featured grants endpoint - fetches from Supabase cache and randomly selects 3
 // Auto-syncs if cache is empty or stale (older than 7 days)
-app.get('/api/featured-grants', async (_req, res): Promise<any> => {
+app.get("/api/featured-grants", async (_req, res): Promise<any> => {
   try {
-    const { supabaseAdmin } = await import('./supabaseClient');
+    const { supabaseAdmin } = await import("./supabaseClient");
 
-    console.log('[API] Fetching featured grants from grants_cache table...');
+    console.log("[API] Fetching featured grants from grants_cache table...");
 
     // Fetch all featured grants from Supabase (should be 5)
     const { data, error } = await supabaseAdmin
-      .from('grants_cache')
-      .select('*')
-      .eq('is_featured', true);
+      .from("grants_cache")
+      .select("*")
+      .eq("is_featured", true);
 
     if (error) {
-      console.error('[API] Supabase error:', error.message);
+      console.error("[API] Supabase error:", error.message);
       // Always return valid JSON, even on error
       return res.json([]);
     }
@@ -159,49 +201,53 @@ app.get('/api/featured-grants', async (_req, res): Promise<any> => {
     const needsSync = !data || data.length === 0 || isGrantsCacheStale(data);
 
     if (needsSync) {
-      console.log('[API] Cache is empty or stale (>7 days), triggering background sync...');
+      console.log(
+        "[API] Cache is empty or stale (>7 days), triggering background sync..."
+      );
 
       // Trigger sync in background (don't wait for it)
-      syncGrantsToSupabase().catch(err => {
-        console.error('[API] Background sync failed:', err);
+      syncGrantsToSupabase().catch((err) => {
+        console.error("[API] Background sync failed:", err);
       });
 
       // If we have some data (even if stale), return it immediately
       if (data && data.length > 0) {
-        console.log('[API] Returning stale data while sync runs in background');
+        console.log("[API] Returning stale data while sync runs in background");
         const shuffled = [...data].sort(() => Math.random() - 0.5);
         const selected = shuffled.slice(0, 3);
         return res.json(selected);
       }
 
       // If no data at all, wait for sync to complete
-      console.log('[API] No data available, waiting for sync to complete...');
+      console.log("[API] No data available, waiting for sync to complete...");
       try {
         await syncGrantsToSupabase();
 
         // Fetch the newly synced grants
         const { data: newData, error: newError } = await supabaseAdmin
-          .from('grants_cache')
-          .select('*')
-          .eq('is_featured', true);
+          .from("grants_cache")
+          .select("*")
+          .eq("is_featured", true);
 
         if (newError) {
-          console.error('[API] Failed to fetch grants after sync:', newError.message);
+          console.error(
+            "[API] Failed to fetch grants after sync:",
+            newError.message
+          );
           return res.json([]);
         }
 
         if (!newData || newData.length === 0) {
-          console.log('[API] No grants available after sync');
+          console.log("[API] No grants available after sync");
           return res.json([]);
         }
 
         const shuffled = [...newData].sort(() => Math.random() - 0.5);
         const selected = shuffled.slice(0, 3);
-        console.log('[API] Returning freshly synced grants');
+        console.log("[API] Returning freshly synced grants");
         return res.json(selected);
-
       } catch (syncError) {
-        console.error('[API] Sync failed:', syncError);
+        console.error("[API] Sync failed:", syncError);
         // Always return valid JSON
         return res.json([]);
       }
@@ -211,11 +257,12 @@ app.get('/api/featured-grants', async (_req, res): Promise<any> => {
     const shuffled = [...data].sort(() => Math.random() - 0.5);
     const selected = shuffled.slice(0, 3);
 
-    console.log(`[API] Randomly selected ${selected.length} grants from ${data.length} available`);
+    console.log(
+      `[API] Randomly selected ${selected.length} grants from ${data.length} available`
+    );
     return res.json(selected);
-
   } catch (error) {
-    console.error('[API] Error fetching featured grants:', error);
+    console.error("[API] Error fetching featured grants:", error);
     // Always return valid JSON, even on error
     return res.json([]);
   }
@@ -229,7 +276,7 @@ function isGrantsCacheStale(grants: any[]): boolean {
   const latestGrant = grants[0];
   if (!latestGrant.created_at && !latestGrant.updated_at) {
     // No timestamp available, consider fresh (will rely on manual syncs)
-    console.log('[API] No timestamp found, assuming cache is fresh');
+    console.log("[API] No timestamp found, assuming cache is fresh");
     return false;
   }
 
@@ -238,17 +285,21 @@ function isGrantsCacheStale(grants: any[]): boolean {
   const now = new Date();
   const sevenDaysInMs = 7 * 24 * 60 * 60 * 1000;
 
-  const isStale = (now.getTime() - grantDate.getTime()) > sevenDaysInMs;
+  const isStale = now.getTime() - grantDate.getTime() > sevenDaysInMs;
 
   if (isStale) {
-    console.log(`[API] Cache is stale (${Math.floor((now.getTime() - grantDate.getTime()) / (24 * 60 * 60 * 1000))} days old)`);
+    console.log(
+      `[API] Cache is stale (${Math.floor(
+        (now.getTime() - grantDate.getTime()) / (24 * 60 * 60 * 1000)
+      )} days old)`
+    );
   }
 
   return isStale;
 }
 
 // Grant search endpoint - Rate limited to 10 requests per hour (expensive Sonar API calls)
-app.post('/api/grants', sonarLimiter, async (req, res): Promise<any> => {
+app.post("/api/grants", sonarLimiter, async (req, res): Promise<any> => {
   try {
     const {
       age,
@@ -268,21 +319,23 @@ app.post('/api/grants', sonarLimiter, async (req, res): Promise<any> => {
 
     // Defensive validation
     if (
-      typeof age !== 'number' ||
-      typeof country !== 'string' ||
-      typeof gender !== 'string' ||
-      typeof citizenship !== 'string' ||
-      typeof education !== 'string' ||
-      typeof degreeType !== 'string' ||
-      typeof yearOfStudy !== 'string' ||
-      typeof fieldOfStudy !== 'string' ||
-      typeof gpa !== 'string' ||
-      typeof incomeBracket !== 'string' ||
-      typeof financialNeed !== 'boolean' ||
-      typeof ethnicity !== 'string' ||
+      typeof age !== "number" ||
+      typeof country !== "string" ||
+      typeof gender !== "string" ||
+      typeof citizenship !== "string" ||
+      typeof education !== "string" ||
+      typeof degreeType !== "string" ||
+      typeof yearOfStudy !== "string" ||
+      typeof fieldOfStudy !== "string" ||
+      typeof gpa !== "string" ||
+      typeof incomeBracket !== "string" ||
+      typeof financialNeed !== "boolean" ||
+      typeof ethnicity !== "string" ||
       !Array.isArray(identifiers)
     ) {
-      return res.status(400).json({ error: "Invalid user profile data received." });
+      return res
+        .status(400)
+        .json({ error: "Invalid user profile data received." });
     }
 
     const dynamicQuery = `
@@ -293,10 +346,12 @@ app.post('/api/grants', sonarLimiter, async (req, res): Promise<any> => {
       * Year of Study: ${yearOfStudy}
       * Field of Study: ${fieldOfStudy}
       * GPA: ${gpa}
-      * Household Income: ${incomeBracket} (${financialNeed ? 'financial need' : 'not financial need'})
+      * Household Income: ${incomeBracket} (${
+      financialNeed ? "financial need" : "not financial need"
+    })
       * Ethnicity: ${ethnicity}
       * Citizenship: ${citizenship}
-      
+
       Provide for each grant:
       * Title
       * Full Description
@@ -312,86 +367,106 @@ app.post('/api/grants', sonarLimiter, async (req, res): Promise<any> => {
       [{"title":"","description":"","amount":"","deadline":"","eligibility":"","organization":"","requirements":"","tags":""}]
     `.trim();
 
-    const sonarResponse = await fetch('https://api.perplexity.ai/chat/completions', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${process.env.SONAR_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: "sonar",
-        messages: [
-          {
-            role: "system",
-            content: "You are a scholarship recommendation engine. Always respond strictly in JSON array format.",
-          },
-          {
-            role: "user",
-            content: dynamicQuery,
-          }
-        ],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            schema: {
-              type: "array",
-              items: {
-                type: "object",
-                properties: {
-                  title: { type: "string" },
-                  description: { type: "string" },
-                  amount: { type: "string" },
-                  deadline: { type: "string" },
-                  eligibility: { type: "string" },
-                  organization: { type: "string" },
-                  requirements: { type: "string" },
-                  tags: { type: "string" },
-                  link: { type: "string" },
+    const sonarResponse = await fetch(
+      "https://api.perplexity.ai/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.SONAR_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "sonar",
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a scholarship recommendation engine. Always respond strictly in JSON array format.",
+            },
+            {
+              role: "user",
+              content: dynamicQuery,
+            },
+          ],
+          response_format: {
+            type: "json_schema",
+            json_schema: {
+              schema: {
+                type: "array",
+                items: {
+                  type: "object",
+                  properties: {
+                    title: { type: "string" },
+                    description: { type: "string" },
+                    amount: { type: "string" },
+                    deadline: { type: "string" },
+                    eligibility: { type: "string" },
+                    organization: { type: "string" },
+                    requirements: { type: "string" },
+                    tags: { type: "string" },
+                    link: { type: "string" },
+                  },
+                  required: ["title", "organization", "amount"],
                 },
-                required: ["title", "organization", "amount"],
               },
             },
           },
-        },
-        max_tokens: 2000,
-        temperature: 0.2,
-      }),
-    });
+          max_tokens: 2000,
+          temperature: 0.2,
+        }),
+      }
+    );
 
     if (!sonarResponse.ok) {
       const errorText = await sonarResponse.text();
-      console.error('Sonar API error:', errorText);
-      return res.status(500).json({ error: 'Failed to fetch grants from Sonar' });
+      console.error("Sonar API error:", errorText);
+      return res
+        .status(500)
+        .json({ error: "Failed to fetch grants from Sonar" });
     }
 
-    const sonarData = await sonarResponse.json() as {
+    const sonarData = (await sonarResponse.json()) as {
       choices?: { message?: { content?: string } }[];
     };
-    const replyContent = sonarData.choices?.[0]?.message?.content ?? '';
+    const replyContent = sonarData.choices?.[0]?.message?.content ?? "";
 
     // Check if replyContent is empty or invalid
-    if (!replyContent || replyContent.trim() === '') {
-      console.error('[Grants API] Sonar returned empty response');
-      console.error('[Grants API] This might indicate:');
-      console.error('  1. Sonar API rate limit reached');
-      console.error('  2. Invalid API key');
-      console.error('  3. Sonar service issue');
-      return res.status(500).json({ error: "Sonar API returned empty response. Please try again later." });
+    if (!replyContent || replyContent.trim() === "") {
+      console.error("[Grants API] Sonar returned empty response");
+      console.error("[Grants API] This might indicate:");
+      console.error("  1. Sonar API rate limit reached");
+      console.error("  2. Invalid API key");
+      console.error("  3. Sonar service issue");
+      return res
+        .status(500)
+        .json({
+          error: "Sonar API returned empty response. Please try again later.",
+        });
     }
 
     let grants = [];
     try {
       grants = JSON.parse(replyContent);
-      
+
       // Validate that grants is an array
       if (!Array.isArray(grants)) {
-        console.error('[Grants API] Sonar response is not an array:', typeof grants);
-        return res.status(500).json({ error: "Invalid grants data format from Sonar." });
+        console.error(
+          "[Grants API] Sonar response is not an array:",
+          typeof grants
+        );
+        return res
+          .status(500)
+          .json({ error: "Invalid grants data format from Sonar." });
       }
     } catch (parseError) {
-      console.error('[Grants API] Failed to parse Sonar JSON:', parseError);
-      console.error('[Grants API] Raw content:', replyContent.substring(0, 200));
-      return res.status(500).json({ error: "Failed to parse grants data from Sonar." });
+      console.error("[Grants API] Failed to parse Sonar JSON:", parseError);
+      console.error(
+        "[Grants API] Raw content:",
+        replyContent.substring(0, 200)
+      );
+      return res
+        .status(500)
+        .json({ error: "Failed to parse grants data from Sonar." });
     }
 
     const mappedGrants = grants.map((item: any, index: number) => ({
@@ -400,24 +475,30 @@ app.post('/api/grants', sonarLimiter, async (req, res): Promise<any> => {
       organization: item.organization ?? "Unknown Organization",
       amount: item.amount ?? "Varies",
       deadline: item.deadline ?? "2026-12-31",
-      link: item.link ?? `https://www.google.com/search?q=${encodeURIComponent(item.title)}`,
+      link:
+        item.link ??
+        `https://www.google.com/search?q=${encodeURIComponent(item.title)}`,
       eligibility: item.eligibility
-        ? item.eligibility.split(/[•\n]/).map((e: string) => e.trim()).filter((e: string) => e.length > 0)
+        ? item.eligibility
+            .split(/[•\n]/)
+            .map((e: string) => e.trim())
+            .filter((e: string) => e.length > 0)
         : ["Eligibility not specified"],
 
       requirements: item.requirements
         ? item.requirements
-          .split(/(?<!\band\b)(?:•|\n|;)/i) // split on •, \n, or ; unless followed by digit
-          .map((r: string) => r.trim())
-          .filter((r: string) => r.length > 0)
+            .split(/(?<!\band\b)(?:•|\n|;)/i) // split on •, \n, or ; unless followed by digit
+            .map((r: string) => r.trim())
+            .filter((r: string) => r.length > 0)
         : [],
       description: item.description ?? "",
-      tags: item.tags ? item.tags.split(",").map((tag: string) => tag.trim()) : [],
+      tags: item.tags
+        ? item.tags.split(",").map((tag: string) => tag.trim())
+        : [],
       difficulty: "Medium",
     }));
 
     res.json(mappedGrants);
-
   } catch (error) {
     console.error("Internal server error:", error);
     res.status(500).json({ error: "Internal server error" });
@@ -433,24 +514,26 @@ app.post("/api/sonar", async (req, res): Promise<any> => {
   }
 
   try {
-    const sonarResponse = await fetch("https://api.perplexity.ai/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.SONAR_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "sonar",
-        messages: [
-          { role: "user", content: question }
-        ],
-      }),
-    });
+    const sonarResponse = await fetch(
+      "https://api.perplexity.ai/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.SONAR_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "sonar",
+          messages: [{ role: "user", content: question }],
+        }),
+      }
+    );
 
-    const data = await sonarResponse.json() as {
+    const data = (await sonarResponse.json()) as {
       choices?: { message?: { content?: string } }[];
     };
-    const answer = data.choices?.[0]?.message?.content ?? "No answer generated.";
+    const answer =
+      data.choices?.[0]?.message?.content ?? "No answer generated.";
     res.json({ answer });
   } catch (error) {
     console.error("Error calling Sonar:", error);
@@ -462,26 +545,39 @@ app.post("/api/sonar", async (req, res): Promise<any> => {
 const requirementDescriptionsCache = new Map<string, string[]>();
 
 // Cache for grant explanations to ensure consistency
-const grantExplanationsCache = new Map<string, { criteria: string[], unique: string }>();
+const grantExplanationsCache = new Map<
+  string,
+  { criteria: string[]; unique: string }
+>();
 
 // NEW: Requirement Descriptions Endpoint
 app.post("/api/requirement-descriptions", async (req, res): Promise<any> => {
   const { requirements, grantTitle } = req.body;
 
   if (!Array.isArray(requirements) || requirements.length === 0) {
-    return res.status(400).json({ error: "Invalid or missing requirements array." });
+    return res
+      .status(400)
+      .json({ error: "Invalid or missing requirements array." });
   }
 
   // Create a cache key from requirements
-  const cacheKey = requirements.map(r => r.trim().toLowerCase()).sort().join('||');
-  
+  const cacheKey = requirements
+    .map((r) => r.trim().toLowerCase())
+    .sort()
+    .join("||");
+
   // Check cache first
   if (requirementDescriptionsCache.has(cacheKey)) {
-    console.log('[API] Returning cached requirement descriptions');
-    return res.json({ descriptions: requirementDescriptionsCache.get(cacheKey) });
+    console.log("[API] Returning cached requirement descriptions");
+    return res.json({
+      descriptions: requirementDescriptionsCache.get(cacheKey),
+    });
   }
 
-  console.log('[API] Generating new requirement descriptions for:', grantTitle || 'unknown grant');
+  console.log(
+    "[API] Generating new requirement descriptions for:",
+    grantTitle || "unknown grant"
+  );
 
   const prompt = `
 For each of the following grant application requirements, write a 5-8 words description (no longer than 10 words) that clearly explains what it is and how to fulfill it.
@@ -500,19 +596,22 @@ Respond in JSON format:
 `.trim();
 
   try {
-    const sonarResponse = await fetch("https://api.perplexity.ai/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.SONAR_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "sonar",
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
+    const sonarResponse = await fetch(
+      "https://api.perplexity.ai/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.SONAR_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "sonar",
+          messages: [{ role: "user", content: prompt }],
+        }),
+      }
+    );
 
-    const data = await sonarResponse.json() as {
+    const data = (await sonarResponse.json()) as {
       choices?: { message?: { content?: string } }[];
     };
     const text = data.choices?.[0]?.message?.content ?? "";
@@ -537,24 +636,27 @@ Respond in JSON format:
 
       // Cache the descriptions for future requests
       requirementDescriptionsCache.set(cacheKey, parsed.descriptions);
-      console.log('[API] Cached requirement descriptions for future use');
+      console.log("[API] Cached requirement descriptions for future use");
 
       return res.json(parsed);
     } catch (err) {
       console.error("JSON parsing error in Sonar response:", err);
-      const fallbackDescriptions = requirements.map(() => "Description not available.");
-      
+      const fallbackDescriptions = requirements.map(
+        () => "Description not available."
+      );
+
       // Cache even the fallback to avoid repeated API calls
       requirementDescriptionsCache.set(cacheKey, fallbackDescriptions);
-      
+
       return res.status(200).json({
         descriptions: fallbackDescriptions,
       });
     }
-
   } catch (error) {
     console.error("Sonar requirements error:", error);
-    return res.status(500).json({ error: "Failed to generate requirement descriptions." });
+    return res
+      .status(500)
+      .json({ error: "Failed to generate requirement descriptions." });
   }
 });
 
@@ -567,14 +669,14 @@ app.post("/api/explain-grant", async (req, res): Promise<any> => {
 
   // Create cache key from title (normalized)
   const cacheKey = title.trim().toLowerCase();
-  
+
   // Check cache first
   if (grantExplanationsCache.has(cacheKey)) {
-    console.log('[API] Returning cached grant explanation for:', title);
+    console.log("[API] Returning cached grant explanation for:", title);
     return res.json(grantExplanationsCache.get(cacheKey));
   }
 
-  console.log('[API] Generating new grant explanation for:', title);
+  console.log("[API] Generating new grant explanation for:", title);
 
   const prompt = `
 You are a scholarship evaluator assistant. Based on the following information:
@@ -600,19 +702,22 @@ Respond in strict JSON format like:
 `.trim();
 
   try {
-    const sonarResponse = await fetch("https://api.perplexity.ai/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.SONAR_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "sonar",
-        messages: [{ role: "user", content: prompt }],
-      }),
-    });
+    const sonarResponse = await fetch(
+      "https://api.perplexity.ai/chat/completions",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.SONAR_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "sonar",
+          messages: [{ role: "user", content: prompt }],
+        }),
+      }
+    );
 
-    const data = await sonarResponse.json() as {
+    const data = (await sonarResponse.json()) as {
       choices?: { message?: { content?: string } }[];
     };
     const text = data.choices?.[0]?.message?.content ?? "";
@@ -623,7 +728,8 @@ Respond in strict JSON format like:
       console.warn("Sonar response missing JSON block. Raw content:", text);
       return res.status(200).json({
         criteria: "We're unable to extract selection criteria at this time.",
-        unique: "The explanation could not be retrieved. Please try refreshing.",
+        unique:
+          "The explanation could not be retrieved. Please try refreshing.",
       });
     }
 
@@ -641,20 +747,20 @@ Respond in strict JSON format like:
 
       // Cache the explanation for future requests
       grantExplanationsCache.set(cacheKey, parsed);
-      console.log('[API] Cached grant explanation for future use');
+      console.log("[API] Cached grant explanation for future use");
 
       return res.json(parsed);
-
     } catch (error) {
       console.error("Sonar explanation JSON parse error:", error);
       const fallbackResponse = {
         criteria: ["We're unable to extract selection criteria at this time."],
-        unique: "The explanation could not be retrieved. Please try refreshing.",
+        unique:
+          "The explanation could not be retrieved. Please try refreshing.",
       };
-      
+
       // Cache even the fallback to avoid repeated API calls
       grantExplanationsCache.set(cacheKey, fallbackResponse);
-      
+
       return res.status(200).json(fallbackResponse);
     }
   } catch (error) {

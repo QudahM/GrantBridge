@@ -12,6 +12,9 @@ server/.env.local
 roadmap.md
 tools-to-add.md
 implementation.md
+canadian-sources.md
+grant.md
+launch-checklist.md
 logs/
 *.log
 npm-debug.log*
