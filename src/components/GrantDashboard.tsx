@@ -149,8 +149,6 @@ const GrantDashboard = () => {
     }
 
     const fetchGrants = async () => {
-      console.log("[Dashboard] Fetching grants with profile:", userProfile);
-      console.log("[Dashboard] API URL:", BASE_URL);
       try {
         setLoading(true);
 
@@ -199,14 +197,14 @@ const GrantDashboard = () => {
             );
           } else {
             console.log(
-              "[Dashboard] 🎉 Successfully loaded grants:",
+              "[Dashboard] Successfully loaded grants:",
               data.slice(0, 2)
             );
           }
 
           setGrants(data);
         } else {
-          console.error("[Dashboard] ❌ Invalid grants data format:", data);
+          console.error("[Dashboard] Invalid grants data format:", data);
           console.error("[Dashboard] Expected array, got:", typeof data);
           setGrants([]);
         }
@@ -404,9 +402,9 @@ const GrantDashboard = () => {
   const sourceGrants = activeTab === "saved" ? savedGrantsData : grants;
 
   // Debug logging
-  console.log("[Dashboard] Active tab:", activeTab);
+  /*console.log("[Dashboard] Active tab:", activeTab);
   console.log("[Dashboard] Source grants count:", sourceGrants.length);
-  console.log("[Dashboard] Filters:", filters);
+  console.log("[Dashboard] Filters:", filters);*/
 
   const filteredGrants = sourceGrants
     .filter((grant) => {

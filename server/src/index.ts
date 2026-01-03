@@ -59,17 +59,10 @@ const allowedOrigins = [
     : []),
 ].filter(Boolean) as string[];
 
-console.log("[CORS] Allowed origins:", allowedOrigins);
-
-// Debug middleware to log all requests
-app.use((req, res, next) => {
-  console.log(
-    `[REQUEST] ${req.method} ${req.path} from ${
-      req.get("origin") || "no-origin"
-    }`
-  );
-  next();
-});
+// Only log CORS configuration in development
+if (process.env.NODE_ENV === "development") {
+  console.log("[CORS] Allowed origins:", allowedOrigins);
+}
 
 app.use(
   cors({
@@ -82,8 +75,11 @@ app.use(
         return callback(null, true);
       }
 
-      // Log rejected origins for debugging
-      console.log(`[CORS] Rejected origin: ${origin}`);
+      // Only log rejected origins in development
+      if (process.env.NODE_ENV === "development") {
+        console.log(`[CORS] Rejected origin: ${origin}`);
+      }
+
       return callback(new Error("Not allowed by CORS"));
     },
     credentials: true,
@@ -167,10 +163,11 @@ app.get("/api/health", (_req, res) => {
   });
 });
 
-// Sentry test endpoint - REMOVE IN PRODUCTION
-app.get("/debug-sentry", function mainHandler(req, res) {
-  throw new Error("My first Sentry error!");
-});
+if (process.env.NODE_ENV === "development") {
+  app.get("/debug-sentry", function mainHandler(req, res) {
+    throw new Error("My first Sentry error!");
+  });
+}
 
 // Schedule grants sync every 7 days at 2 AM
 // Cron format: minute hour day-of-month month day-of-week
@@ -285,9 +282,7 @@ app.get("/api/featured-grants", async (_req, res): Promise<any> => {
     const shuffled = [...data].sort(() => Math.random() - 0.5);
     const selected = shuffled.slice(0, 3);
 
-    console.log(
-      `[API] Randomly selected ${selected.length} grants from ${data.length} available`
-    );
+    console.log(`[API] Randomly selected ${selected.length} grants from cache`);
     return res.json(selected);
   } catch (error) {
     console.error("[API] Error fetching featured grants:", error);
