@@ -1,3 +1,4 @@
+import * as Sentry from "@sentry/node";
 import cors from "cors";
 import dotenv from "dotenv";
 import express from "express";
@@ -11,6 +12,14 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT ?? 5000;
+
+Sentry.init({
+  dsn: process.env.SENTRY_DSN,
+  environment: process.env.NODE_ENV,
+  tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
+});
+
+app.use(Sentry.expressErrorHandler());
 
 // Security headers with helmet
 app.use(
@@ -142,6 +151,11 @@ app.get("/api/health", (_req, res) => {
       cron_sync: "scheduled",
     },
   });
+});
+
+// Sentry test endpoint - REMOVE IN PRODUCTION
+app.get("/debug-sentry", function mainHandler(req, res) {
+  throw new Error("My first Sentry error!");
 });
 
 // Schedule grants sync every 7 days at 2 AM

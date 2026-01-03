@@ -1,19 +1,19 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
-import { useReducedMotion } from "./useReducedMotion";
-import { useSmartCta } from "../../hooks/useSmartCta";
+import { motion } from "framer-motion";
 import {
+  ArrowRight,
+  DollarSign,
   Search,
+  Sparkles,
   TrendingUp,
   Users,
-  DollarSign,
-  ArrowRight,
-  Sparkles,
 } from "lucide-react";
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useSmartCta } from "../../hooks/useSmartCta";
+import { useReducedMotion } from "./useReducedMotion";
 
 export const Hero = () => {
   const prefersReducedMotion = useReducedMotion();
@@ -44,9 +44,13 @@ export const Hero = () => {
   ];
 
   const stats = [
-    { icon: <DollarSign size={20} />, value: "$5M+", label: "In Grants Found" },
+    {
+      icon: <DollarSign size={20} />,
+      value: "$100k+",
+      label: "In Grants Found",
+    },
     { icon: <Users size={20} />, value: "1K+", label: "Students Assisted" },
-    { icon: <TrendingUp size={20} />, value: "95%", label: "Match Accuracy" },
+    { icon: <TrendingUp size={20} />, value: "80%", label: "Match Accuracy" },
   ];
 
   return (
@@ -186,9 +190,12 @@ export const Hero = () => {
               className="flex flex-col sm:flex-row gap-4 pt-4"
             >
               <Button
+                variant="outline"
                 size="lg"
                 onClick={handleCtaClick}
-                className="w-full sm:w-auto px-8 py-6 text-base bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                className="w-full sm:w-auto px-8 py-6 text-base border border-slate-500 text-slate-100
+                          bg-slate-900/40 hover:bg-slate-800 hover:text-white hover:border-slate-400
+                          transition-all duration-200"
               >
                 Create Free Profile
               </Button>
@@ -196,8 +203,8 @@ export const Hero = () => {
                 variant="outline"
                 size="lg"
                 onClick={handleCtaClick}
-                className="w-full sm:w-auto px-8 py-6 text-base border border-slate-500 text-slate-100 
-                          bg-slate-900/40 hover:bg-slate-800 hover:text-white hover:border-slate-400 
+                className="w-full sm:w-auto px-8 py-6 text-base border border-slate-500 text-slate-100
+                          bg-slate-900/40 hover:bg-slate-800 hover:text-white hover:border-slate-400
                           transition-all duration-200"
               >
                 View All Grants
@@ -282,8 +289,8 @@ export const Hero = () => {
               <Button
                 onClick={() => navigate("/explore")}
                 variant="outline"
-                className="w-full border border-slate-500/70 text-slate-100 
-                          bg-slate-900/40 hover:bg-slate-800 hover:border-slate-400 
+                className="w-full border border-slate-500/70 text-slate-100
+                          bg-slate-900/40 hover:bg-slate-800 hover:border-slate-400
                           hover:text-white transition-all duration-200"
               >
                 View Details

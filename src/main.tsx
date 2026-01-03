@@ -1,10 +1,32 @@
+import * as Sentry from "@sentry/react";
 import React from "react";
 import ReactDOM from "react-dom/client";
+import { HelmetProvider } from "react-helmet-async";
+import { BrowserRouter } from "react-router-dom";
 import App from "./App.tsx";
 import "./index.css";
-import { BrowserRouter } from "react-router-dom";
-import { HelmetProvider } from 'react-helmet-async';
-import { initGA } from './lib/analytics';
+import { initGA } from "./lib/analytics";
+
+if (import.meta.env.VITE_SENTRY_DSN) {
+  Sentry.init({
+    dsn: import.meta.env.VITE_SENTRY_DSN,
+    environment: import.meta.env.MODE,
+    integrations: [Sentry.browserTracingIntegration()],
+    tracesSampleRate: import.meta.env.MODE === "production" ? 0.1 : 1.0, // Lower sampling in production
+    beforeSend(event) {
+      // Only log in development
+      if (import.meta.env.MODE === "development") {
+        console.log(
+          "Sentry event captured:",
+          event.exception?.values?.[0]?.value || event.message
+        );
+      }
+      return event;
+    },
+  });
+} else {
+  console.log("Sentry DSN not found, skipping Sentry initialization");
+}
 
 initGA();
 
@@ -17,5 +39,5 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         <App />
       </BrowserRouter>
     </HelmetProvider>
-  </React.StrictMode>,
+  </React.StrictMode>
 );
