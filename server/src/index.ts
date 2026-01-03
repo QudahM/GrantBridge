@@ -64,16 +64,23 @@ console.log("[CORS] Allowed origins:", allowedOrigins);
 app.use(
   cors({
     origin: (origin, callback) => {
+      console.log(`[CORS] Request from origin: ${origin}`);
+
       // Allow requests with no origin (like mobile apps, Postman, curl)
       if (!origin) {
+        console.log("[CORS] Allowing request with no origin");
         return callback(null, true);
       }
 
       if (allowedOrigins.includes(origin)) {
+        console.log(`[CORS] Allowing origin: ${origin}`);
         callback(null, true);
       } else {
         console.warn(
           `[CORS] Blocked request from unauthorized origin: ${origin}`
+        );
+        console.warn(
+          `[CORS] Allowed origins are: ${allowedOrigins.join(", ")}`
         );
         callback(new Error("Not allowed by CORS"));
       }
