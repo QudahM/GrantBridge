@@ -19,7 +19,8 @@ Sentry.init({
   tracesSampleRate: process.env.NODE_ENV === "production" ? 0.1 : 1.0,
 });
 
-app.use(Sentry.expressErrorHandler());
+app.use(Sentry.Handlers.requestHandler());
+app.use(Sentry.Handlers.tracingHandler());
 
 // Security headers with helmet
 app.use(
@@ -836,6 +837,9 @@ app.post("/api/contact", generalLimiter, async (req, res): Promise<any> => {
     return res.status(500).json({ error: "Failed to send email" });
   }
 });
+
+// Add Sentry error handler AFTER your routes but BEFORE other error handlers
+app.use(Sentry.Handlers.errorHandler());
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
