@@ -46,6 +46,9 @@ app.use(
 // Secure CORS configuration
 const allowedOrigins = [
   ...(process.env.FRONTEND_URL?.split(",").map((url) => url.trim()) || []),
+  // Production fallback domains
+  "https://grantbridge.online",
+  "https://www.grantbridge.online",
   // Allow localhost for development
   ...(process.env.NODE_ENV === "development"
     ? [
@@ -55,6 +58,8 @@ const allowedOrigins = [
       ]
     : []),
 ].filter(Boolean) as string[];
+
+console.log("[CORS] Allowed origins:", allowedOrigins);
 
 app.use(
   cors({
