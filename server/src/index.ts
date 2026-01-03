@@ -59,7 +59,7 @@ const allowedOrigins = [
     : []),
 ].filter(Boolean) as string[];
 
-console.log("[CORS] Temporarily allowing all origins for debugging");
+console.log("[CORS] Allowed origins:", allowedOrigins);
 
 // Debug middleware to log all requests
 app.use((req, res, next) => {
@@ -73,7 +73,19 @@ app.use((req, res, next) => {
 
 app.use(
   cors({
-    origin: true, // Temporarily allow all origins for debugging
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+
+      // Check if origin is in allowed list
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      // Log rejected origins for debugging
+      console.log(`[CORS] Rejected origin: ${origin}`);
+      return callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
